@@ -7,7 +7,10 @@ from sqlalchemy.util._collections import _LW
 
 from apis.broker.alice_blue import buy_alice_blue_trades
 from apis.broker.alice_blue import close_alice_blue_trades
-from apis.constants import BROKER, NFO_TYPE, ACTION, OPTION_TYPE
+from apis.constants import ACTION
+from apis.constants import BROKER
+from apis.constants import NFO_TYPE
+from apis.constants import OPTION_TYPE
 from extensions import db
 from models.completed_profit import CompletedProfit
 from models.nfo import NFO
