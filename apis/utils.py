@@ -12,6 +12,7 @@ from extensions import db
 from models.completed_profit import CompletedProfit
 from models.nfo import NFO
 
+
 EXPIRY_LISTS = [
     "07 APR 2022",
     "13 APR 2022",
