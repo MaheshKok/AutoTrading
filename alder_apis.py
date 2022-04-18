@@ -1,7 +1,8 @@
 import csv
 
 import requests
-from marshmallow import Schema, fields
+from marshmallow import Schema
+from marshmallow import fields
 
 blueprint_app_api = "https://app.giftango.com"
 blueprint_api = "https://api.giftango.com"
@@ -583,7 +584,8 @@ print(generate_csv())
 import csv
 
 import requests
-from marshmallow import Schema, fields
+from marshmallow import Schema
+from marshmallow import fields
 
 
 class CatalogueSchema(Schema):

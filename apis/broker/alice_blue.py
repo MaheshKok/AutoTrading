@@ -1,7 +1,10 @@
 import datetime
 import logging
 
-from alice_blue import AliceBlue, OrderType, ProductType, TransactionType
+from alice_blue import AliceBlue
+from alice_blue import OrderType
+from alice_blue import ProductType
+from alice_blue import TransactionType
 from sentry_sdk import capture_exception
 
 from extensions import db

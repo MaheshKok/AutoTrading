@@ -2,7 +2,8 @@ import datetime
 from datetime import date
 from time import sleep
 
-from alice_blue import AliceBlue, LiveFeedType
+from alice_blue import AliceBlue
+from alice_blue import LiveFeedType
 
 app_id = "FgshPEm3jw"
 secret = "9wg5GZzBhiOjVrf10OGYjwECrMVSnwecSLRtp8hsvJwyWDiGpFpTzOvTkwypJOcs"

@@ -2,7 +2,9 @@ import json
 import random
 
 import requests
-from marshmallow import Schema, fields, validate
+from marshmallow import Schema
+from marshmallow import fields
+from marshmallow import validate
 
 
 class nameSchema(Schema):

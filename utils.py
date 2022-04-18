@@ -8,9 +8,10 @@ from dateutil import parser
 from sqlalchemy import and_
 from sqlalchemy.dialects.postgresql import UUID
 
-from apis.utils import (fetch_data, get_computed_profit,
-                        get_computed_profit_without_fetching_completed_profit,
-                        get_constructed_data)
+from apis.utils import fetch_data
+from apis.utils import get_computed_profit
+from apis.utils import get_computed_profit_without_fetching_completed_profit
+from apis.utils import get_constructed_data
 from extensions import db
 from main import app
 from models.completed_profit import CompletedProfit

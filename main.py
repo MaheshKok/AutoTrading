@@ -2,7 +2,8 @@
 import logging
 
 import telegram
-from dotenv import find_dotenv, load_dotenv
+from dotenv import find_dotenv
+from dotenv import load_dotenv
 
 from app import create_webapp
 

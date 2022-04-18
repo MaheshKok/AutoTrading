@@ -5,8 +5,8 @@ from typing import List
 import requests
 from sqlalchemy.util._collections import _LW
 
-from apis.broker.alice_blue import (buy_alice_blue_trades,
-                                    close_alice_blue_trades)
+from apis.broker.alice_blue import buy_alice_blue_trades
+from apis.broker.alice_blue import close_alice_blue_trades
 from apis.constants import BROKER
 from extensions import db
 from models.completed_profit import CompletedProfit

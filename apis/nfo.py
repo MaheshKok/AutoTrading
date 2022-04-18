@@ -2,8 +2,10 @@
 
 import logging
 
-from flask import request, url_for
-from flask_rest_jsonapi import ResourceDetail, ResourceList
+from flask import request
+from flask import url_for
+from flask_rest_jsonapi import ResourceDetail
+from flask_rest_jsonapi import ResourceList
 from flask_rest_jsonapi.decorators import check_method_requirements
 from flask_rest_jsonapi.exceptions import ObjectNotFound
 from flask_rest_jsonapi.pagination import add_pagination_links
@@ -13,7 +15,8 @@ from marshmallow import ValidationError
 from marshmallow_jsonapi.exceptions import IncorrectTypeError
 from sqlalchemy.orm.exc import NoResultFound
 
-from apis.utils import buy_or_sell_future, buy_or_sell_option
+from apis.utils import buy_or_sell_future
+from apis.utils import buy_or_sell_option
 from extensions import db
 from models.nfo import NFO
 from schema.nfo import NFOSchema

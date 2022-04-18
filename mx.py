@@ -1,7 +1,8 @@
 import json
 
 import requests
-from marshmallow import Schema, fields
+from marshmallow import Schema
+from marshmallow import fields
 
 headers = {
     "Accept": "application/vnd.mx.api.v1+json",
