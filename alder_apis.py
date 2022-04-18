@@ -1,6 +1,6 @@
 import csv
-import requests
 
+import requests
 from marshmallow import Schema, fields
 
 blueprint_app_api = "https://app.giftango.com"

@@ -2,9 +2,9 @@
 import logging
 
 import telegram
+from dotenv import find_dotenv, load_dotenv
 
 from app import create_webapp
-from dotenv import load_dotenv, find_dotenv
 
 load_dotenv(find_dotenv())
 

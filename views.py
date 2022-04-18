@@ -6,13 +6,14 @@ import time
 from flask import jsonify
 from flask_rest_jsonapi import Api
 
-from apis.till_yesterdays_profit import TillYesterdaysProfitList, TillYesterdaysProfitDetail
-from apis.nfo import NFODetail
-from apis.nfo import NFOList
-from apis.option_chain import OptionChainList, OptionChainDetail
-from apis.utils import get_computed_profit, get_constructed_data, close_all_trades
-from models.option_chain import OptionChain
+from apis.nfo import NFODetail, NFOList
+from apis.option_chain import OptionChainDetail, OptionChainList
+from apis.till_yesterdays_profit import (TillYesterdaysProfitDetail,
+                                         TillYesterdaysProfitList)
+from apis.utils import (close_all_trades, get_computed_profit,
+                        get_constructed_data)
 from extensions import db
+from models.option_chain import OptionChain
 
 log = logging.getLogger(__name__)
 

@@ -1,12 +1,11 @@
 
+import sentry_sdk
 from flask import Flask
+from flask_cors import CORS
 
 from extensions import register_extensions
 from extensions.schedular.initialize import register_scheduler
-from views import register_base_routes
-from views import register_json_routes
-from flask_cors import CORS
-import sentry_sdk
+from views import register_base_routes, register_json_routes
 
 
 def _create_app():

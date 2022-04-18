@@ -1,5 +1,6 @@
 # Create data storage
 from datetime import datetime
+
 from sqlalchemy.dialects.postgresql import UUID
 
 from extensions import db

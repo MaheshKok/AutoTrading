@@ -1,6 +1,6 @@
 # Create logical data abstraction (same as data storage for this first example)
 from marshmallow_jsonapi import fields
-from marshmallow_jsonapi.flask import Schema, Relationship
+from marshmallow_jsonapi.flask import Relationship, Schema
 
 
 class NFOSchema(Schema):

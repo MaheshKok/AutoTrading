@@ -1,17 +1,16 @@
 import copy
 from datetime import datetime
 from typing import List
-from uuid import UUID
 
 import requests
-
 from sqlalchemy.util._collections import _LW
 
-from apis.broker.alice_blue import close_alice_blue_trades, buy_alice_blue_trades
+from apis.broker.alice_blue import (buy_alice_blue_trades,
+                                    close_alice_blue_trades)
+from apis.constants import BROKER
 from extensions import db
 from models.completed_profit import CompletedProfit
 from models.nfo import NFO
-
 
 EXPIRY_LISTS = [
     "07 APR 2022",
@@ -269,7 +268,7 @@ def buy_or_sell_option(self, data: dict):
 
             strike_quantity_dict = get_aggregated_trades(today_expirys_ongoing_trades)
             if broker_id := data.get("broker_id"):
-                if broker_id == UUID("faeda058-2d3a-4ad6-b29f-d3fb6897cd8b"):
+                if broker_id == BROKER.alice_blue_id:
                     close_alice_blue_trades(
                         strike_quantity_dict, symbol, current_expiry, nfo_type
                     )
@@ -296,7 +295,7 @@ def buy_or_sell_option(self, data: dict):
                     else (-1 * next_expiry_data["quantity"])
                 )
                 if broker_id := data.get("broker_id"):
-                    if broker_id == UUID("faeda058-2d3a-4ad6-b29f-d3fb6897cd8b"):
+                    if broker_id == BROKER.alice_blue_id:
                         status = buy_alice_blue_trades(
                             strike_quantity_dict={next_expiry_data["strike"]: quantity},
                             symbol=next_expiry_data["symbol"],
@@ -324,7 +323,7 @@ def buy_or_sell_option(self, data: dict):
         ):
             strike_quantity_dict = get_aggregated_trades(next_expirys_ongoing_trades)
             if broker_id := data.get("broker_id"):
-                if broker_id == UUID("faeda058-2d3a-4ad6-b29f-d3fb6897cd8b"):
+                if broker_id == BROKER.alice_blue_id:
                     close_alice_blue_trades(
                         strike_quantity_dict, symbol, next_expiry, nfo_type
                     )
@@ -334,7 +333,7 @@ def buy_or_sell_option(self, data: dict):
 
         data = get_final_data(data=data, expiry=next_expiry, current_time=current_time)
         if broker_id := data.get("broker_id"):
-            if broker_id == UUID("faeda058-2d3a-4ad6-b29f-d3fb6897cd8b"):
+            if broker_id == BROKER.alice_blue_id:
                 status = buy_alice_blue_trades(
                     {data["strike"]: data["quantity"]},
                     symbol,
@@ -363,7 +362,7 @@ def buy_or_sell_option(self, data: dict):
         ):
             strike_quantity_dict = get_aggregated_trades(today_expirys_ongoing_trades)
             if broker_id := data.get("broker_id"):
-                if broker_id == UUID("faeda058-2d3a-4ad6-b29f-d3fb6897cd8b"):
+                if broker_id == BROKER.alice_blue_id:
                     close_alice_blue_trades(
                         strike_quantity_dict,
                         symbol,
@@ -380,7 +379,7 @@ def buy_or_sell_option(self, data: dict):
 
         data = get_final_data(data, expiry=current_expiry, current_time=current_time)
         if broker_id := data.get("broker_id"):
-            if broker_id == UUID("faeda058-2d3a-4ad6-b29f-d3fb6897cd8b"):
+            if broker_id == BROKER.alice_blue_id:
                 status = buy_alice_blue_trades(
                     {data["strike"]: data["quantity"]}, symbol, current_expiry, nfo_type
                 )

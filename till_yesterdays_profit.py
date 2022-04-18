@@ -1,16 +1,16 @@
+import logging
 from datetime import datetime, timedelta
 
 import tzlocal
 from apscheduler.schedulers.background import BackgroundScheduler
+
 from apis.utils import get_computed_profit
 from extensions import db
 from main import app
 from models.till_yesterdays_profit import TillYesterdaysProfit
-import logging
 
 log = logging.getLogger(__name__)
 import pytz
-
 from apscheduler.schedulers.blocking import BlockingScheduler
 
 scheduler = BackgroundScheduler()

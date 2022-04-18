@@ -1,5 +1,6 @@
-from Crypto.PublicKey import RSA
 from Crypto.Cipher import PKCS1_v1_5 as Cipher_PKCS1_v1_5
+from Crypto.PublicKey import RSA
+
 
 def encrypt_data(data):
     with open("/home/echague/.ssh/id_rsa.pub", "rb") as k:
