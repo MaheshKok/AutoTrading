@@ -7,7 +7,7 @@ from sqlalchemy.util._collections import _LW
 
 from apis.broker.alice_blue import buy_alice_blue_trades
 from apis.broker.alice_blue import close_alice_blue_trades
-from apis.constants import BROKER
+from apis.constants import BROKER, NFO_TYPE
 from extensions import db
 from models.completed_profit import CompletedProfit
 from models.nfo import NFO
@@ -252,7 +252,6 @@ def handle_current_expiry_trades_on_expiry_day(
     symbol = data["symbol"]
     payload_action = data["action"]
     data["option_type"] = "ce" if payload_action == "buy" else "pe"
-    nfo_type = "option"
 
     current_expirys_ongoing_action = (
         "buy" if today_expirys_ongoing_trades[0].quantity > 0 else "sell"
@@ -263,7 +262,7 @@ def handle_current_expiry_trades_on_expiry_day(
     if broker_id := data.get("broker_id"):
         if broker_id == BROKER.alice_blue_id:
             close_alice_blue_trades(
-                strike_quantity_dict, symbol, current_expiry, nfo_type
+                strike_quantity_dict, symbol, current_expiry, NFO_TYPE.OPTION
             )
 
     close_ongoing_trades(
@@ -296,7 +295,7 @@ def handle_current_expiry_trades_on_expiry_day(
                 strike_quantity_dict={next_expiry_data["strike"]: quantity},
                 symbol=next_expiry_data["symbol"],
                 expiry=next_expiry,
-                nfo_type=nfo_type,
+                nfo_type=NFO_TYPE.OPTION,
             )
             if status == STATUS.SUCCESS:
                 return (self.create_object(next_expiry_data, kwargs={}),)
@@ -306,12 +305,11 @@ def handle_buy_and_sell_trade(self, data, expiry, current_time):
     symbol = data["symbol"]
     option_type = "ce" if data["action"] == "buy" else "pe"
     data["option_type"] = option_type
-    nfo_type = "option"
 
     next_expirys_ongoing_trades = NFO.query.filter_by(
         strategy_id=data["strategy_id"],
         exited_at=None,
-        nfo_type=nfo_type,
+        nfo_type=NFO_TYPE.OPTION,
         symbol=symbol,
         expiry=expiry,
     ).all()
@@ -323,24 +321,25 @@ def handle_buy_and_sell_trade(self, data, expiry, current_time):
         strike_quantity_dict = get_aggregated_trades(next_expirys_ongoing_trades)
         if broker_id := data.get("broker_id"):
             if broker_id == BROKER.alice_blue_id:
-                close_alice_blue_trades(strike_quantity_dict, symbol, expiry, nfo_type)
+                close_alice_blue_trades(strike_quantity_dict, symbol, expiry, NFO_TYPE.OPTION)
         close_ongoing_trades(
             next_expirys_ongoing_trades, symbol, expiry, current_time, data
         )
 
     data = get_final_data(data=data, expiry=expiry, current_time=current_time)
-    if broker_id := data.get("broker_id"):
-        if broker_id == BROKER.alice_blue_id:
-            status = buy_alice_blue_trades(
-                {data["strike"]: data["quantity"]},
-                symbol,
-                expiry,
-                nfo_type,
-            )
-            if status == STATUS.SUCCESS:
-                return (self.create_object(data, kwargs={}),)
-    else:
+
+    if not (broker_id := data.get("broker_id")):
         return (self.create_object(data, kwargs={}),)
+
+    if broker_id == BROKER.alice_blue_id:
+        status = buy_alice_blue_trades(
+            {data["strike"]: data["quantity"]},
+            symbol,
+            expiry,
+            NFO_TYPE.OPTION,
+        )
+        if status == STATUS.SUCCESS:
+            return (self.create_object(data, kwargs={}),)
 
 
 def buy_or_sell_option(self, data: dict):
@@ -370,12 +369,12 @@ def buy_or_sell_option(self, data: dict):
     if not todays_expiry:
         return handle_buy_and_sell_trade(self, data, current_expiry, current_time)
 
-    nfo_type = "option"
+    
 
     if today_expirys_ongoing_trades := NFO.query.filter_by(
         strategy_id=data["strategy_id"],
         exited_at=None,
-        nfo_type=nfo_type,
+        nfo_type=NFO_TYPE.OPTION,
         symbol=data["symbol"],
         expiry=current_expiry,
     ).all():

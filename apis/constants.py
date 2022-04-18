@@ -34,3 +34,7 @@ class SYMBOL:
 
 class BROKER:
     alice_blue_id = UUID("faeda058-2d3a-4ad6-b29f-d3fb6897cd8b")
+
+
+class NFO_TYPE:
+    OPTION = "option"
