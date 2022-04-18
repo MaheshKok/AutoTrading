@@ -287,18 +287,19 @@ def handle_current_expiry_trades_on_expiry_day(
             if next_expiry_data["quantity"] > 0
             else (-1 * next_expiry_data["quantity"])
         )
-        if broker_id := data.get("broker_id"):
-            if broker_id == BROKER.alice_blue_id:
-                status = buy_alice_blue_trades(
-                    strike_quantity_dict={next_expiry_data["strike"]: quantity},
-                    symbol=next_expiry_data["symbol"],
-                    expiry=next_expiry,
-                    nfo_type=nfo_type,
-                )
-                if status == STATUS.SUCCESS:
-                    return (self.create_object(next_expiry_data, kwargs={}),)
-        else:
+
+        if not (broker_id := data.get("broker_id")):
             return (self.create_object(next_expiry_data, kwargs={}),)
+
+        if broker_id == BROKER.alice_blue_id:
+            status = buy_alice_blue_trades(
+                strike_quantity_dict={next_expiry_data["strike"]: quantity},
+                symbol=next_expiry_data["symbol"],
+                expiry=next_expiry,
+                nfo_type=nfo_type,
+            )
+            if status == STATUS.SUCCESS:
+                return (self.create_object(next_expiry_data, kwargs={}),)
 
 
 def handle_buy_and_sell_trade(self, data, expiry, current_time):
@@ -364,10 +365,7 @@ def buy_or_sell_option(self, data: dict):
     """
     current_time = datetime.now()
     current_expiry, next_expiry, todays_expiry = get_current_and_next_expiry()
-    symbol = data["symbol"]
-    payload_action = data["action"]
-    option_type = "ce" if payload_action == "buy" else "pe"
-    data["option_type"] = option_type
+    data["option_type"] = "ce" if data["action"] == "buy" else "pe"
 
     if not todays_expiry:
         return handle_buy_and_sell_trade(self, data, current_expiry, current_time)
@@ -378,7 +376,7 @@ def buy_or_sell_option(self, data: dict):
         strategy_id=data["strategy_id"],
         exited_at=None,
         nfo_type=nfo_type,
-        symbol=symbol,
+        symbol=data["symbol"],
         expiry=current_expiry,
     ).all():
         return handle_current_expiry_trades_on_expiry_day(
