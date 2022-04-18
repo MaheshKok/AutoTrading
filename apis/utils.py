@@ -7,7 +7,7 @@ from sqlalchemy.util._collections import _LW
 
 from apis.broker.alice_blue import buy_alice_blue_trades
 from apis.broker.alice_blue import close_alice_blue_trades
-from apis.constants import BROKER, NFO_TYPE
+from apis.constants import BROKER, NFO_TYPE, ACTION, OPTION_TYPE
 from extensions import db
 from models.completed_profit import CompletedProfit
 from models.nfo import NFO
@@ -109,7 +109,7 @@ def get_final_data(data, expiry, current_time):
         )
     )
 
-    option_type = "ce" if data["action"] == "buy" else "pe"
+    option_type = OPTION_TYPE.CE if data["action"] == ACTION.BUY else OPTION_TYPE.PE
     data["option_type"] = option_type
     strike_price = data.get("strike_price")
     if strike := data.get("strike"):
@@ -152,7 +152,7 @@ def get_final_data(data, expiry, current_time):
 
     if data.get("action"):
         data["quantity"] = (
-            data["quantity"] if data["action"] == "buy" else -data["quantity"]
+            data["quantity"] if data["action"] == ACTION.BUY else -data["quantity"]
         )
         del data["action"]
 
@@ -251,10 +251,9 @@ def handle_current_expiry_trades_on_expiry_day(
 ):
     symbol = data["symbol"]
     payload_action = data["action"]
-    data["option_type"] = "ce" if payload_action == "buy" else "pe"
 
     current_expirys_ongoing_action = (
-        "buy" if today_expirys_ongoing_trades[0].quantity > 0 else "sell"
+        ACTION.BUY if today_expirys_ongoing_trades[0].quantity > 0 else ACTION.SELL
     )
     total_ongoing_trades = sum(trade.quantity for trade in today_expirys_ongoing_trades)
 
@@ -276,7 +275,9 @@ def handle_current_expiry_trades_on_expiry_day(
     if current_expirys_ongoing_action == payload_action:
         data_copy = copy.deepcopy(data)
         data_copy["quantity"] = (
-            total_ongoing_trades if payload_action == "buy" else -total_ongoing_trades
+            total_ongoing_trades
+            if payload_action == ACTION.BUY
+            else -total_ongoing_trades
         )
         next_expiry_data = get_final_data(
             data=data_copy, expiry=next_expiry, current_time=current_time
@@ -303,8 +304,6 @@ def handle_current_expiry_trades_on_expiry_day(
 
 def handle_buy_and_sell_trade(self, data, expiry, current_time):
     symbol = data["symbol"]
-    option_type = "ce" if data["action"] == "buy" else "pe"
-    data["option_type"] = option_type
 
     next_expirys_ongoing_trades = NFO.query.filter_by(
         strategy_id=data["strategy_id"],
@@ -316,12 +315,14 @@ def handle_buy_and_sell_trade(self, data, expiry, current_time):
 
     if (
         next_expirys_ongoing_trades
-        and next_expirys_ongoing_trades[0].option_type != option_type
+        and next_expirys_ongoing_trades[0].option_type != data["option_type"]
     ):
         strike_quantity_dict = get_aggregated_trades(next_expirys_ongoing_trades)
         if broker_id := data.get("broker_id"):
             if broker_id == BROKER.alice_blue_id:
-                close_alice_blue_trades(strike_quantity_dict, symbol, expiry, NFO_TYPE.OPTION)
+                close_alice_blue_trades(
+                    strike_quantity_dict, symbol, expiry, NFO_TYPE.OPTION
+                )
         close_ongoing_trades(
             next_expirys_ongoing_trades, symbol, expiry, current_time, data
         )
@@ -364,12 +365,12 @@ def buy_or_sell_option(self, data: dict):
     """
     current_time = datetime.now()
     current_expiry, next_expiry, todays_expiry = get_current_and_next_expiry()
-    data["option_type"] = "ce" if data["action"] == "buy" else "pe"
+    data["option_type"] = (
+        OPTION_TYPE.CE if data["action"] == ACTION.BUY else OPTION_TYPE.PE
+    )
 
     if not todays_expiry:
         return handle_buy_and_sell_trade(self, data, current_expiry, current_time)
-
-    
 
     if today_expirys_ongoing_trades := NFO.query.filter_by(
         strategy_id=data["strategy_id"],
@@ -438,7 +439,7 @@ def get_computed_profit_without_fetching_completed_profit(strategy_id=None):
                     nfo,
                     float(constructed_data[f"{nfo.strike}_{nfo.option_type}"]),
                 )
-                ongoing_action = "buy" if nfo.quantity > 0 else "sell"
+                ongoing_action = ACTION.BUY if nfo.quantity > 0 else ACTION.SELL
                 ongoing_trades += 1
 
         total_strategy_profits = completed_profit + ongoing_profit
@@ -563,7 +564,7 @@ def get_computed_profit(strategy_id=None):
                 nfo,
                 float(constructed_data[f"{nfo.strike}_{nfo.option_type}"]),
             )
-            ongoing_action = "buy" if nfo.quantity > 0 else "sell"
+            ongoing_action = ACTION.BUY if nfo.quantity > 0 else ACTION.SELL
             ongoing_trades += 1
 
         if completed_profit_dict.get(_strategy_id):

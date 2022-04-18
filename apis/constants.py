@@ -38,3 +38,13 @@ class BROKER:
 
 class NFO_TYPE:
     OPTION = "option"
+
+
+class ACTION:
+    BUY = "buy"
+    SELL = "sell"
+
+
+class OPTION_TYPE:
+    CE = "ce"
+    PE = "pe"
