@@ -1,4 +1,3 @@
-
 import sentry_sdk
 from flask import Flask
 from flask_cors import CORS
@@ -7,6 +6,7 @@ from extensions import register_extensions
 from extensions.schedular.initialize import register_scheduler
 from views import register_base_routes
 from views import register_json_routes
+from sentry_sdk.integrations.flask import FlaskIntegration
 
 
 def _create_app():
@@ -29,11 +29,11 @@ def create_webapp() -> Flask:  # pragma: no cover
 
     sentry_sdk.init(
         "https://ce37badd7d894b97a19dc645745e0730@o1202314.ingest.sentry.io/6327385",
-
         # Set traces_sample_rate to 1.0 to capture 100%
         # of transactions for performance monitoring.
         # We recommend adjusting this value in production.
         traces_sample_rate=1.0,
-        environment="production"
+        environment="production",
+        integrations=[FlaskIntegration()],
     )
     return app

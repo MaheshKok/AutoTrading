@@ -244,7 +244,9 @@ def get_aggregated_trades(trades: List[NFO]):
 
 def buy_or_sell_option(self, data: dict):
     current_time = datetime.now()
+    print(f"current_time: {current_time}")
     current_expiry, next_expiry, todays_expiry = get_current_and_next_expiry()
+    print(f"time taken to compute expiry: {(datetime.now() - current_time).microseconds}")
     symbol = data["symbol"]
     action = data["action"]
     option_type = "ce" if action == "buy" else "pe"
@@ -364,12 +366,14 @@ def buy_or_sell_option(self, data: dict):
             strike_quantity_dict = get_aggregated_trades(today_expirys_ongoing_trades)
             if broker_id := data.get("broker_id"):
                 if broker_id == BROKER.alice_blue_id:
+                    print(f"time taken to hit alice blue to close trade: {(datetime.now() - current_time).microseconds}")
                     close_alice_blue_trades(
                         strike_quantity_dict,
                         symbol,
                         current_expiry,
                         nfo_type,
                     )
+                    print(f"time taken to get response from alice blue: {(datetime.now() - current_time).microseconds}")
             close_ongoing_trades(
                 today_expirys_ongoing_trades,
                 symbol,
@@ -381,9 +385,13 @@ def buy_or_sell_option(self, data: dict):
         data = get_final_data(data, expiry=current_expiry, current_time=current_time)
         if broker_id := data.get("broker_id"):
             if broker_id == BROKER.alice_blue_id:
+                print(f"current time: {datetime.now()}")
+                print(f"time taken to hit alice blue to buy trade: {(datetime.now() - current_time).microseconds}")
                 status = buy_alice_blue_trades(
                     {data["strike"]: data["quantity"]}, symbol, current_expiry, nfo_type
                 )
+                print(f"current time: {datetime.now()}")
+                print(f"time taken to get response from alice blue of buy trade: {(datetime.now() - current_time).microseconds}")
                 if status == STATUS.SUCCESS:
                     obj = self.create_object(data, kwargs={})
                     return (obj,)
