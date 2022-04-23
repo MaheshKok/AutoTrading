@@ -209,6 +209,9 @@ def close_ongoing_trades(ongoing_trades, symbol, expiry_str, current_time, data=
 
     db.session.bulk_update_mappings(NFO, mappings)
     db.session.commit()
+    # db.session.refresh(ongoing_trades)
+
+    return ongoing_trades
 
 
 def get_current_and_next_expiry():
@@ -300,14 +303,12 @@ def task_closing_trade(data, expiry, current_time, close_it=False):
     if ongoing_trades and ongoing_trades[0].option_type != data["option_type"]:
         return close_trades(*args)
 
-    return []
-
 
 def task_buying_trade(self, data, expiry, current_time, quantity=None):
     data = get_final_data_to_ingest(data=data, expiry=expiry, current_time=current_time)
 
     if not (broker_id := data.get("broker_id")):
-        return self.create_object(data, kwargs={}),
+        return self.create_object(data, kwargs={})
 
     if broker_id == BROKER.alice_blue_id:
         status = buy_alice_blue_trades(
@@ -317,12 +318,14 @@ def task_buying_trade(self, data, expiry, current_time, quantity=None):
             NFO_TYPE.OPTION,
         )
         if status == STATUS.SUCCESS:
-            return self.create_object(data, kwargs={}),
+            return self.create_object(data, kwargs={})
 
 
 def handle_buy_and_sell_trade(self, data, expiry, current_time):
     args = [data, expiry, current_time]
-    return task_closing_trade(*args), task_buying_trade(self, *args)
+    closed_trades = task_closing_trade(*args)
+    bought_trades = task_buying_trade(self, *args)
+    return (*closed_trades, bought_trades) if closed_trades else [bought_trades]
 
 
 def buy_or_sell_option(self, data: dict):
