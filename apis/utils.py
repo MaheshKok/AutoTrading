@@ -266,9 +266,7 @@ def task_buying_trade_of_next_expiry_on_expiry_day(
         sum(trade.quantity for trade in today_expirys_ongoing_trades) + 1
     )
     quantity = (
-        total_ongoing_trades
-        if payload_action == ACTION.BUY
-        else -total_ongoing_trades
+        total_ongoing_trades if payload_action == ACTION.BUY else -total_ongoing_trades
     )
     return task_buying_trade(*args, quantity)
 
