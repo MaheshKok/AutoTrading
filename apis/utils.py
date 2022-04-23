@@ -105,12 +105,7 @@ def get_constructed_data(symbol="BANKNIFTY", expiry=None):
 
 
 def get_final_data_to_ingest(data, expiry, current_time):
-    constructed_data = dict(
-        sorted(
-            get_constructed_data(data["symbol"], expiry=expiry).items(),
-            key=lambda item: float(item[1]),
-        )
-    )
+    constructed_data = get_constructed_data(data["symbol"], expiry=expiry)
 
     option_type = OPTION_TYPE.CE if data["action"] == ACTION.BUY else OPTION_TYPE.PE
     data["option_type"] = option_type
@@ -118,11 +113,19 @@ def get_final_data_to_ingest(data, expiry, current_time):
     if strike := data.get("strike"):
         data["entry_price"] = constructed_data[f"{strike}_{option_type}"]
     elif strike_price:
-        entry_price, strike = 0, 0
+        # get the strike price which is just less than the payload strike price
+        entry_price, strike, prev_val = 0, 0, 0
         for key, value in constructed_data.items():
-            if option_type in key and -50 < (float(value) - float(strike_price)) < 100:
-                entry_price, strike = value, key.split("_")[0]
-                break
+            if option_type == "ce" and option_type in key:
+                if float(value) != 0.0 and float(value) <= strike_price:
+                    entry_price, strike = value, key.split("_")[0]
+                    break
+            elif option_type == "pe" and option_type in key:
+                if float(value) != 0.0 and float(value) >= strike_price:
+                    entry_price, strike = prev_val[1], prev_val[0].split("_")[0]
+                    break
+                prev_val = (key, value)
+
         data["entry_price"] = entry_price
         data["strike"] = strike
         # strike_price doesnt make entry to database its only for selection of exact strike price which is entry price
@@ -169,13 +172,7 @@ def get_final_data_to_ingest(data, expiry, current_time):
 
 
 def close_ongoing_trades(ongoing_trades, symbol, expiry_str, current_time, data=None):
-    constructed_data = dict(
-        sorted(
-            get_constructed_data(symbol, expiry=expiry_str).items(),
-            key=lambda item: float(item[1]),
-        )
-    )
-
+    constructed_data = get_constructed_data(symbol, expiry=expiry_str)
     mappings = []
     total_profit = 0
     for trade in ongoing_trades:
@@ -261,19 +258,19 @@ def task_buying_trade_of_next_expiry_on_expiry_day(
     )
 
     args = [self, next_expiry_data, next_expiry, current_time]
-    if current_expirys_ongoing_action == payload_action:
-        total_ongoing_trades = (
-            sum(trade.quantity for trade in today_expirys_ongoing_trades) + 1
-        )
-        quantity = (
-            total_ongoing_trades
-            if payload_action == ACTION.BUY
-            else -total_ongoing_trades
-        )
-        return task_buying_trade(*args, quantity)
-    else:
+    if current_expirys_ongoing_action != payload_action:
         # buy one trade from next expiry
         return task_buying_trade(*args)
+
+    total_ongoing_trades = (
+        sum(trade.quantity for trade in today_expirys_ongoing_trades) + 1
+    )
+    quantity = (
+        total_ongoing_trades
+        if payload_action == ACTION.BUY
+        else -total_ongoing_trades
+    )
+    return task_buying_trade(*args, quantity)
 
 
 def close_trades(data, ongoing_trades, expiry, current_time):
