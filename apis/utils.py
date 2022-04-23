@@ -322,9 +322,7 @@ def task_buying_trade(self, data, expiry, current_time, quantity=None):
 
 def handle_buy_and_sell_trade(self, data, expiry, current_time):
     args = [data, expiry, current_time]
-    task_1 = task_closing_trade(*args)
-    task_2 = task_buying_trade(self, *args)
-    return task_2, task_1
+    return task_closing_trade(*args), task_buying_trade(self, *args)
 
 
 def buy_or_sell_option(self, data: dict):
