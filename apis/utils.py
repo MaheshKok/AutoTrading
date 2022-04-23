@@ -104,9 +104,7 @@ def get_constructed_data(symbol="BANKNIFTY", expiry=None):
     return constructed_data
 
 
-def get_final_data_to_ingest(data, expiry, current_time):
-    constructed_data = get_constructed_data(data["symbol"], expiry=expiry)
-
+def get_final_data_to_ingest(data, expiry, current_time, constructed_data):
     option_type = OPTION_TYPE.CE if data["action"] == ACTION.BUY else OPTION_TYPE.PE
     data["option_type"] = option_type
     strike_price = data.get("strike_price")
@@ -171,8 +169,7 @@ def get_final_data_to_ingest(data, expiry, current_time):
     return data
 
 
-def close_ongoing_trades(ongoing_trades, symbol, expiry_str, current_time, data=None):
-    constructed_data = get_constructed_data(symbol, expiry=expiry_str)
+def close_ongoing_trades(ongoing_trades, constructed_data, current_time, data=None):
     mappings = []
     total_profit = 0
     for trade in ongoing_trades:
@@ -256,11 +253,15 @@ def task_buying_trade_of_next_expiry_on_expiry_day(
         ACTION.BUY if today_expirys_ongoing_trades[0].quantity > 0 else ACTION.SELL
     )
 
+    constructed_data = get_constructed_data(data["symbol"], expiry=next_expiry)
     next_expiry_data = get_final_data_to_ingest(
-        data=data, expiry=next_expiry, current_time=current_time
+        data=data,
+        expiry=next_expiry,
+        current_time=current_time,
+        constructed_data=constructed_data,
     )
 
-    args = [self, next_expiry_data, next_expiry, current_time]
+    args = [self, next_expiry_data, next_expiry, current_time, constructed_data]
     if current_expirys_ongoing_action != payload_action:
         # buy one trade from next expiry
         return task_buying_trade(*args)
@@ -274,20 +275,18 @@ def task_buying_trade_of_next_expiry_on_expiry_day(
     return task_buying_trade(*args, quantity)
 
 
-def close_trades(data, ongoing_trades, expiry, current_time):
+def close_trades(data, ongoing_trades, expiry, current_time, constructed_data):
     strike_quantity_dict = get_aggregated_trades(ongoing_trades)
     if broker_id := data.get("broker_id"):
         if broker_id == BROKER.alice_blue_id:
             close_alice_blue_trades(
                 strike_quantity_dict, data["symbol"], expiry, NFO_TYPE.OPTION
             )
-    return close_ongoing_trades(
-        ongoing_trades, data["symbol"], expiry, current_time, data
-    )
+    # constructed_data = constructed_data = get_constructed_data(data["symbol"], expiry=expiry)
+    return close_ongoing_trades(ongoing_trades, constructed_data, current_time, data)
 
 
-def task_closing_trade(data, expiry, current_time, close_it=False):
-
+def task_closing_trade(data, expiry, current_time, constructed_data, close_it=False):
     ongoing_trades = NFO.query.filter_by(
         strategy_id=data["strategy_id"],
         exited_at=None,
@@ -296,7 +295,7 @@ def task_closing_trade(data, expiry, current_time, close_it=False):
         expiry=expiry,
     ).all()
 
-    args = [data, ongoing_trades, expiry, current_time]
+    args = [data, ongoing_trades, expiry, current_time, constructed_data]
     if close_it:
         return close_trades(*args)
 
@@ -304,8 +303,15 @@ def task_closing_trade(data, expiry, current_time, close_it=False):
         return close_trades(*args)
 
 
-def task_buying_trade(self, data, expiry, current_time, quantity=None):
-    data = get_final_data_to_ingest(data=data, expiry=expiry, current_time=current_time)
+def task_buying_trade(
+    self, payload_data, expiry, current_time, constructed_data, quantity=None
+):
+    data = get_final_data_to_ingest(
+        data=payload_data,
+        expiry=expiry,
+        current_time=current_time,
+        constructed_data=constructed_data,
+    )
 
     if not (broker_id := data.get("broker_id")):
         return self.create_object(data, kwargs={})
@@ -322,9 +328,11 @@ def task_buying_trade(self, data, expiry, current_time, quantity=None):
 
 
 def handle_buy_and_sell_trade(self, data, expiry, current_time):
-    args = [data, expiry, current_time]
-    closed_trades = task_closing_trade(*args)
-    bought_trades = task_buying_trade(self, *args)
+    constructed_data = get_constructed_data(data["symbol"], expiry=expiry)
+    closed_trades = task_closing_trade(data, expiry, current_time, constructed_data)
+    bought_trades = task_buying_trade(
+        self, data, expiry, current_time, constructed_data
+    )
     return (*closed_trades, bought_trades) if closed_trades else [bought_trades]
 
 
