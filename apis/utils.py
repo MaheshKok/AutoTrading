@@ -364,7 +364,7 @@ def buy_or_sell_option(self, data: dict):
         symbol=data["symbol"],
         expiry=current_expiry,
     ).all():
-        return task_closing_trade(
+        return *task_closing_trade(
             data, current_expiry, current_time, close_it=True
         ), task_buying_trade_of_next_expiry_on_expiry_day(
             today_expirys_ongoing_trades, data, next_expiry, current_time
