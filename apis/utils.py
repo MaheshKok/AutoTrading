@@ -1,4 +1,5 @@
 import copy
+import threading
 from datetime import datetime
 from typing import List
 
@@ -170,45 +171,47 @@ def get_final_data_to_ingest(data, expiry, current_time, constructed_data):
 
 
 def close_ongoing_trades(ongoing_trades, constructed_data, current_time, data=None):
+    from main import app
     mappings = []
     total_profit = 0
-    for trade in ongoing_trades:
-        exit_price = constructed_data[f"{trade.strike}_{trade.option_type}"]
-        profit = get_profit(trade, exit_price)
-        future_exit_price = data.get("future_entry_price", 0)
-        future_profit = (
-            get_future_profit(trade, future_exit_price)
-            if trade.future_entry_price
-            else 0
-        )
-        mappings.append(
-            {
-                "id": trade.id,
-                "profit": profit,
-                "exit_price": exit_price,
-                "exited_at": current_time,
-                "future_exit_price": future_exit_price,
-                "future_profit": future_profit,
-            }
-        )
-        total_profit += profit
+    with app.app_context():
+        for trade in ongoing_trades:
+            exit_price = constructed_data[f"{trade.strike}_{trade.option_type}"]
+            profit = get_profit(trade, exit_price)
+            future_exit_price = data.get("future_entry_price", 0)
+            future_profit = (
+                get_future_profit(trade, future_exit_price)
+                if trade.future_entry_price
+                else 0
+            )
+            mappings.append(
+                {
+                    "id": trade.id,
+                    "profit": profit,
+                    "exit_price": exit_price,
+                    "exited_at": current_time,
+                    "future_exit_price": future_exit_price,
+                    "future_profit": future_profit,
+                }
+            )
+            total_profit += profit
 
-    if cp := CompletedProfit.query.filter_by(strategy_id=trade.strategy_id).scalar():
-        cp.profit += total_profit
-        cp.trades += len(ongoing_trades)
-    else:
-        cp = CompletedProfit(
-            profit=total_profit,
-            strategy_id=trade.strategy_id,
-            trades=len(ongoing_trades),
-        )
-        db.session.add(cp)
+        if cp := CompletedProfit.query.filter_by(strategy_id=trade.strategy_id).scalar():
+            cp.profit += total_profit
+            cp.trades += len(ongoing_trades)
+        else:
+            cp = CompletedProfit(
+                profit=total_profit,
+                strategy_id=trade.strategy_id,
+                trades=len(ongoing_trades),
+            )
+            db.session.add(cp)
 
-    db.session.bulk_update_mappings(NFO, mappings)
-    db.session.commit()
-    # db.session.refresh(ongoing_trades)
+        db.session.bulk_update_mappings(NFO, mappings)
+        db.session.commit()
+        # db.session.refresh(ongoing_trades)
 
-    return ongoing_trades
+        return ongoing_trades
 
 
 def get_current_and_next_expiry():
@@ -287,13 +290,15 @@ def close_trades(data, ongoing_trades, expiry, current_time, constructed_data):
 
 
 def task_closing_trade(data, expiry, current_time, constructed_data, close_it=False):
-    ongoing_trades = NFO.query.filter_by(
-        strategy_id=data["strategy_id"],
-        exited_at=None,
-        nfo_type=NFO_TYPE.OPTION,
-        symbol=data["symbol"],
-        expiry=expiry,
-    ).all()
+    from main import app
+    with app.app_context():
+        ongoing_trades = NFO.query.filter_by(
+            strategy_id=data["strategy_id"],
+            exited_at=None,
+            nfo_type=NFO_TYPE.OPTION,
+            symbol=data["symbol"],
+            expiry=expiry,
+        ).all()
 
     args = [data, ongoing_trades, expiry, current_time, constructed_data]
     if close_it:
@@ -306,6 +311,7 @@ def task_closing_trade(data, expiry, current_time, constructed_data, close_it=Fa
 def task_buying_trade(
     self, payload_data, expiry, current_time, constructed_data, quantity=None
 ):
+    from main import  app
     data = get_final_data_to_ingest(
         data=payload_data,
         expiry=expiry,
@@ -313,26 +319,30 @@ def task_buying_trade(
         constructed_data=constructed_data,
     )
 
-    if not (broker_id := data.get("broker_id")):
-        return self.create_object(data, kwargs={})
-
-    if broker_id == BROKER.alice_blue_id:
-        status = buy_alice_blue_trades(
-            {data["strike"]: quantity or data["quantity"]},
-            data["symbol"],
-            expiry,
-            NFO_TYPE.OPTION,
-        )
-        if status == STATUS.SUCCESS:
+    with app.app_context():
+        if not (broker_id := data.get("broker_id")):
             return self.create_object(data, kwargs={})
+
+        if broker_id == BROKER.alice_blue_id:
+            status = buy_alice_blue_trades(
+                {data["strike"]: quantity or data["quantity"]},
+                data["symbol"],
+                expiry,
+                NFO_TYPE.OPTION,
+            )
+            if status == STATUS.SUCCESS:
+                return self.create_object(data, kwargs={})
 
 
 def handle_buy_and_sell_trade(self, data, expiry, current_time):
     constructed_data = get_constructed_data(data["symbol"], expiry=expiry)
-    closed_trades = task_closing_trade(data, expiry, current_time, constructed_data)
-    bought_trades = task_buying_trade(
-        self, data, expiry, current_time, constructed_data
-    )
+    closed_trades = threading.Thread(
+        target=task_closing_trade, args=(data, expiry, current_time, constructed_data)
+    ).start()
+    bought_trades = threading.Thread(
+        target=task_buying_trade,
+        args=(self, data, expiry, current_time, constructed_data),
+    ).start()
     return (*closed_trades, bought_trades) if closed_trades else [bought_trades]
 
 
