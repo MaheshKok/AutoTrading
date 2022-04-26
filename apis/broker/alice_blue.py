@@ -14,34 +14,36 @@ log = logging.getLogger(__name__)
 
 
 def get_alice_blue_obj():
-    broker = Broker.query.filter_by(name="alice_blue").scalar()
-    try:
-        alice = AliceBlue(
-            username=broker.username,
-            password=broker.password,
-            access_token=broker.access_token,
-            master_contracts_to_download=["NFO"],
-        )
-    except:
-        broker = Broker.query.filter_by(name="alice_blue").with_for_update().scalar()
-        access_token = AliceBlue.login_and_get_access_token(
-            username=broker.username,
-            password=broker.password,
-            twoFA="1994",
-            api_secret=broker.api_secret,
-            app_id=broker.app_id,
-        )
-        broker.access_token = access_token
-        db.session.commit()
+    from main import app
+    with app.app_context():
+        broker = Broker.query.filter_by(name="alice_blue").scalar()
+        try:
+            alice = AliceBlue(
+                username=broker.username,
+                password=broker.password,
+                access_token=broker.access_token,
+                master_contracts_to_download=["NFO"],
+            )
+        except:
+            broker = Broker.query.filter_by(name="alice_blue").with_for_update().scalar()
+            access_token = AliceBlue.login_and_get_access_token(
+                username=broker.username,
+                password=broker.password,
+                twoFA="1994",
+                api_secret=broker.api_secret,
+                app_id=broker.app_id,
+            )
+            broker.access_token = access_token
+            db.session.commit()
 
-        alice = AliceBlue(
-            username=broker.username,
-            password=broker.password,
-            access_token=access_token,
-            master_contracts_to_download=["NFO"],
-        )
+            alice = AliceBlue(
+                username=broker.username,
+                password=broker.password,
+                access_token=access_token,
+                master_contracts_to_download=["NFO"],
+            )
 
-    return alice
+        return alice
 
 
 def close_alice_blue_trades(
