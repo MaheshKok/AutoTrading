@@ -1,6 +1,7 @@
 # Create endpoints
 import datetime
 import logging
+import threading
 import time
 
 from flask import jsonify
@@ -54,6 +55,11 @@ def update_option_chain(symbol="BANKNIFTY"):
     db.session.commit()
 
 
+def print_num(num):
+    for i in range(num):
+        print(i)
+
+
 def register_base_routes(app):
     @app.route("/")
     def index():
@@ -93,6 +99,12 @@ def register_base_routes(app):
     # def close_trades():
     #     return close_all_trades()
 
+    @app.route("/api/thread")
+    def test_threading():
+        thread_1 = threading.Thread(target=print_num, args=(10,))
+        thread_2 = threading.Thread(target=print_num, args=(20,))
+        thread_1.start()
+        thread_2.start()
 
 def register_json_routes(app):
     api = Api(app)
