@@ -105,6 +105,8 @@ def register_base_routes(app):
         thread_2 = threading.Thread(target=print_num, args=(20,))
         thread_1.start()
         thread_2.start()
+        return "thread started successfully"
+
 
 def register_json_routes(app):
     api = Api(app)
