@@ -2,6 +2,7 @@ import copy
 import threading
 from datetime import datetime
 from typing import List
+import concurrent.futures
 
 import requests
 from sqlalchemy.util._collections import _LW
@@ -21,7 +22,7 @@ EXPIRY_LISTS = [
     "13 APR 2022",
     "21 APR 2022",
     "28 APR 2022",
-    "05 MAY 20022",
+    "05 MAY 2022",
     "12 MAY 2022",
     "26 MAY 2022",
 ]
@@ -382,8 +383,9 @@ def buy_or_sell_option(self, data: dict):
         symbol=data["symbol"],
         expiry=current_expiry,
     ).all():
+        constructed_data = get_constructed_data(data["symbol"], expiry=current_expiry)
         return *task_closing_trade(
-            data, current_expiry, current_time, close_it=True
+            data, current_expiry, current_time, constructed_data, close_it=True
         ), task_buying_trade_of_next_expiry_on_expiry_day(
             today_expirys_ongoing_trades, data, next_expiry, current_time
         )
