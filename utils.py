@@ -21,7 +21,7 @@ from models.till_yesterdays_profit import TillYesterdaysProfit
 
 def generate_csv():
     with app.app_context():
-        file = "db_data/6_apr.csv"
+        file = "db_data/28_apr.csv"
         with open(file, "w") as csvfile:
             outcsv = csv.writer(
                 csvfile, delimiter=",", quotechar='"', quoting=csv.QUOTE_MINIMAL
@@ -171,14 +171,14 @@ def add_column():
 # def delete_rows():
 #     with app.app_context():
 #         delete_q = NFO.__table__.delete().where(
-#             and_(NFO.exited_at == None, NFO.expiry == datetime.date(2022, 4, 28))
+#             NFO.exited_at != None
 #         )
 #         db.session.execute(delete_q)
 #         db.session.commit()
 #         print("rows deleted ")
-
 #
-# # delete_rows()
+#
+# delete_rows()
 
 
 def undo_last_action():
@@ -369,6 +369,28 @@ while True:
         print(output)
     except StopIteration as e:
         pass
+
+
+class my_gen:
+    def __init__(self, num):
+        self.last = num
+        self.first = 0
+
+    def __next__(self):
+        if self.first == self.last:
+            raise StopIteration()
+
+        val = self.first ** 2
+        self.first += 1
+        return val
+
+# r = my_gen(100)
+# while True:
+#     try:
+#         output = next(r)
+#         print(output)
+#     except StopIteration as e:
+#         pass
 
 # compare_db_with_tdview_profit()
 

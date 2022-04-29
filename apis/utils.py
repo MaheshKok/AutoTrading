@@ -18,19 +18,20 @@ from models.completed_profit import CompletedProfit
 from models.nfo import NFO
 
 EXPIRY_LISTS = [
-    "07 APR 2022",
-    "13 APR 2022",
-    "21 APR 2022",
     "28 APR 2022",
     "05 MAY 2022",
     "12 MAY 2022",
+    "19 MAY 2022",
     "26 MAY 2022",
+    "02 JUN 2022",
+    "30 JUN 2022",
 ]
 
 
 class STATUS:
     SUCCESS = "success"
     ERROR = "error"
+    COMPLETE = "complete"
 
 
 def get_current_expiry():
@@ -173,6 +174,7 @@ def get_final_data_to_ingest(data, expiry, current_time, constructed_data):
 
 def close_ongoing_trades(ongoing_trades, constructed_data, current_time, data=None):
     from main import app
+
     mappings = []
     total_profit = 0
     with app.app_context():
@@ -197,7 +199,9 @@ def close_ongoing_trades(ongoing_trades, constructed_data, current_time, data=No
             )
             total_profit += profit
 
-        if cp := CompletedProfit.query.filter_by(strategy_id=trade.strategy_id).scalar():
+        if cp := CompletedProfit.query.filter_by(
+            strategy_id=trade.strategy_id
+        ).scalar():
             cp.profit += total_profit
             cp.trades += len(ongoing_trades)
         else:
@@ -283,8 +287,14 @@ def close_trades(data, ongoing_trades, expiry, current_time, constructed_data):
     strike_quantity_dict = get_aggregated_trades(ongoing_trades)
     if broker_id := data.get("broker_id"):
         if broker_id == BROKER.alice_blue_id:
-            close_alice_blue_trades(
-                strike_quantity_dict, data["symbol"], expiry, NFO_TYPE.OPTION
+            return close_alice_blue_trades(
+                strike_quantity_dict,
+                data["symbol"],
+                expiry,
+                NFO_TYPE.OPTION,
+                ongoing_trades,
+                data,
+                current_time,
             )
     # constructed_data = constructed_data = get_constructed_data(data["symbol"], expiry=expiry)
     return close_ongoing_trades(ongoing_trades, constructed_data, current_time, data)
@@ -292,6 +302,7 @@ def close_trades(data, ongoing_trades, expiry, current_time, constructed_data):
 
 def task_closing_trade(data, expiry, current_time, constructed_data, close_it=False):
     from main import app
+
     with app.app_context():
         ongoing_trades = NFO.query.filter_by(
             strategy_id=data["strategy_id"],
@@ -312,7 +323,8 @@ def task_closing_trade(data, expiry, current_time, constructed_data, close_it=Fa
 def task_buying_trade(
     self, payload_data, expiry, current_time, constructed_data, quantity=None
 ):
-    from main import  app
+    from main import app
+
     data = get_final_data_to_ingest(
         data=payload_data,
         expiry=expiry,
@@ -325,14 +337,13 @@ def task_buying_trade(
             return self.create_object(data, kwargs={})
 
         if broker_id == BROKER.alice_blue_id:
-            status = buy_alice_blue_trades(
-                {data["strike"]: quantity or data["quantity"]},
-                data["symbol"],
+            return buy_alice_blue_trades(
+                self,
+                data,
+                quantity,
                 expiry,
                 NFO_TYPE.OPTION,
             )
-            if status == STATUS.SUCCESS:
-                return self.create_object(data, kwargs={})
 
 
 def handle_buy_and_sell_trade(self, data, expiry, current_time):
