@@ -6,4 +6,4 @@ venv/
 db_data/
 trading_view_chart_calls
 
- __pycache__/
+*/__pycache__/*
