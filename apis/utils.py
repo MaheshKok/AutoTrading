@@ -172,7 +172,7 @@ def get_final_data_to_ingest(data, expiry, current_time, constructed_data):
     return data
 
 
-def close_ongoing_trades(ongoing_trades, constructed_data, current_time, data=None):
+def close_ongoing_trades(ongoing_trades, constructed_data, current_time, data, broker_data=None):
     from main import app
 
     mappings = []
@@ -180,6 +180,9 @@ def close_ongoing_trades(ongoing_trades, constructed_data, current_time, data=No
     with app.app_context():
         for trade in ongoing_trades:
             exit_price = constructed_data[f"{trade.strike}_{trade.option_type}"]
+            if broker_data:
+                exit_price = broker_data.get(f"{trade.strike}_{trade.option_type}") or exit_price
+
             profit = get_profit(trade, exit_price)
             future_exit_price = data.get("future_entry_price", 0)
             future_profit = (
@@ -295,8 +298,8 @@ def close_trades(data, ongoing_trades, expiry, current_time, constructed_data):
                 ongoing_trades,
                 data,
                 current_time,
+                constructed_data
             )
-    # constructed_data = constructed_data = get_constructed_data(data["symbol"], expiry=expiry)
     return close_ongoing_trades(ongoing_trades, constructed_data, current_time, data)
 
 
