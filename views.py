@@ -107,6 +107,11 @@ def register_base_routes(app):
         thread_2.start()
         return "thread started successfully"
 
+    @app.route("/api/testing")
+    def test_threading():
+        log.warning("this is testing url")
+        return "success"
+
 
 def register_json_routes(app):
     api = Api(app)
