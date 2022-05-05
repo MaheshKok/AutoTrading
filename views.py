@@ -108,7 +108,7 @@ def register_base_routes(app):
         return "thread started successfully"
 
     @app.route("/api/testing")
-    def test_threading():
+    def test_practice():
         log.warning("this is testing url")
         return "success"
 
