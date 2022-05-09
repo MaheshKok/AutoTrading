@@ -1,3 +1,4 @@
+import concurrent.futures
 import datetime
 import logging
 import threading
@@ -96,33 +97,36 @@ def close_alice_blue_trades(
     from apis.utils import close_ongoing_trades
 
     alice = get_alice_blue_obj()
-    strike_option_type_close_order_id_dict = {}
 
     if isinstance(expiry, str):
         expiry = datetime.datetime.strptime(expiry, "%d %b %Y").date()
 
-    threads = []
-    for strike, quantity in strike_quantity_dict.items():
-        t = threading.Thread(
-            target=place_close_order, args=(alice, symbol, expiry, nfo_type, strike, quantity)
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        place_order_futures = [
+            executor.submit(
+                place_close_order, alice, symbol, expiry, nfo_type, strike, quantity
+            )
+            for strike, quantity in strike_quantity_dict.items()
+        ]
+
+        place_order_future_results = [
+            place_order_future.result() for place_order_future in place_order_futures
+        ]
+
+        strike_option_type_exit_price_dict = {}
+        for place_order_future_result in place_order_future_results:
+            for strike_option_type, order_id in place_order_future_result.items():
+                order_history = alice.get_order_history(order_id)["data"][0]
+                if order_history["order_status"] == "complete":
+                    strike_option_type_exit_price_dict[
+                        strike_option_type
+                    ] = order_history["average_price"]
+                else:
+                    print(order_history)
+
+        return close_ongoing_trades(
+            ongoing_trades, strike_option_type_exit_price_dict, current_time, data
         )
-        t.start()
-        threads.append(t)
-
-    strike_option_type_exit_price_dict = {}
-    # check for this
-    for strike_option_type, order_id in strike_option_type_close_order_id_dict.items():
-        order_history = alice.get_order_history(order_id)["data"][0]
-        if order_history["order_status"] == "complete":
-            strike_option_type_exit_price_dict[strike_option_type] = order_history[
-                "average_price"
-            ]
-        else:
-            print(order_history)
-
-    return close_ongoing_trades(
-        ongoing_trades, strike_option_type_exit_price_dict, current_time, data
-    )
 
 
 def buy_alice_blue_trades(self, data, quantity, expiry: datetime.date, nfo_type):
