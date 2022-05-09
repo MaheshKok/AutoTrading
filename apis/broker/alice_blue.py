@@ -1,5 +1,6 @@
 import datetime
 import logging
+import threading
 
 from alice_blue import AliceBlue
 from alice_blue import OrderType
@@ -49,6 +50,32 @@ def get_alice_blue_obj():
         return alice
 
 
+def place_close_order(alice, symbol, expiry: datetime.date, nfo_type, strike, quantity):
+    option_type = "ce" if quantity > 0 else "pe"
+    instrument = alice.get_instrument_for_fno(
+        symbol=symbol,
+        expiry_date=expiry,
+        is_fut=nfo_type != "option",
+        strike=strike,
+        is_CE=option_type == "ce",
+    )
+
+    place_order_response = alice.place_order(
+        transaction_type=TransactionType.Sell,
+        instrument=instrument,
+        quantity=quantity if quantity > 0 else (-1 * quantity),
+        order_type=OrderType.Market,
+        product_type=ProductType.Delivery,
+        price=0.0,
+        trigger_price=None,
+        stop_loss=None,
+        square_off=None,
+        trailing_sl=None,
+        is_amo=False,
+    )
+    return {f"{strike}_{option_type}": place_order_response["data"]["oms_order_id"]}
+
+
 def close_alice_blue_trades(
     strike_quantity_dict,
     symbol,
@@ -74,32 +101,13 @@ def close_alice_blue_trades(
     if isinstance(expiry, str):
         expiry = datetime.datetime.strptime(expiry, "%d %b %Y").date()
 
+    threads = []
     for strike, quantity in strike_quantity_dict.items():
-        option_type = "ce" if quantity > 0 else "pe"
-        instrument = alice.get_instrument_for_fno(
-            symbol=symbol,
-            expiry_date=expiry,
-            is_fut=nfo_type != "option",
-            strike=strike,
-            is_CE=option_type == "ce",
+        t = threading.Thread(
+            target=place_close_order, args=(alice, symbol, expiry, nfo_type, strike, quantity)
         )
-
-        place_order_response = alice.place_order(
-            transaction_type=TransactionType.Sell,
-            instrument=instrument,
-            quantity=quantity if quantity > 0 else (-1 * quantity),
-            order_type=OrderType.Market,
-            product_type=ProductType.Delivery,
-            price=0.0,
-            trigger_price=None,
-            stop_loss=None,
-            square_off=None,
-            trailing_sl=None,
-            is_amo=False,
-        )
-        strike_option_type_close_order_id_dict[
-            f"{strike}_{option_type}"
-        ] = place_order_response["data"]["oms_order_id"]
+        t.start()
+        threads.append(t)
 
     strike_option_type_exit_price_dict = {}
     # check for this

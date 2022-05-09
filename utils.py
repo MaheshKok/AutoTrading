@@ -392,6 +392,50 @@ class my_gen:
 #     except StopIteration as e:
 #         pass
 
+
+class my_gen:
+    def __init__(self, num):
+        self.last = num
+        self.first = 0
+
+    def __next__(self):
+        if self.first == self.last:
+            raise StopIteration()
+
+        val = self.first ** 2
+        self.first += 1
+        return val
+
+# r = my_gen(100)
+# while True:
+#     try:
+#         output = next(r)
+#         print(output)
+#     except StopIteration as e:
+#         pass
+
+
+class my_gen:
+    def __init__(self, num):
+        self.last = num
+        self.first = 0
+
+    def __next__(self):
+        if self.first == self.last:
+            raise StopIteration()
+
+        val = self.first ** 2
+        self.first += 1
+        return val
+
+# r = my_gen(100)
+# while True:
+#     try:
+#         output = next(r)
+#         print(output)
+#     except StopIteration as e:
+#         pass
+
 # compare_db_with_tdview_profit()
 
 # take_next_expiry_trades()
