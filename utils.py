@@ -90,7 +90,6 @@ def show_chart(strategy_id=100, file_name="db_data/till_28_apr.csv"):
                 except:
                     pass
 
-
     # date_profit_dict = {}
     # with open(
     #     "trading_view_chart_calls/testing_Mahesh_strategy_[RS]_V0_2022-02-25.csv", "r"
