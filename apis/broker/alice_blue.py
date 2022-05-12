@@ -2,6 +2,7 @@ import concurrent.futures
 import datetime
 import logging
 import threading
+import time
 
 from alice_blue import AliceBlue
 from alice_blue import OrderType
@@ -85,6 +86,7 @@ def close_alice_blue_trades(
     ongoing_trades,
     data,
     current_time,
+constructed_data
 ):
     """
     assumptions
@@ -113,20 +115,21 @@ def close_alice_blue_trades(
             place_order_future.result() for place_order_future in place_order_futures
         ]
 
-        strike_option_type_exit_price_dict = {}
+        strike_optiontype_exitprice_dict = {}
         for place_order_future_result in place_order_future_results:
             for strike_option_type, order_id in place_order_future_result.items():
                 order_history = alice.get_order_history(order_id)["data"][0]
-                if order_history["order_status"] == "complete":
-                    strike_option_type_exit_price_dict[
-                        strike_option_type
-                    ] = order_history["average_price"]
-                else:
-                    print(order_history)
+                for _ in range(10):
+                    if order_history["order_status"] == "complete":
+                        strike_optiontype_exitprice_dict[
+                            strike_option_type
+                        ] = order_history["average_price"]
+                        break
+                    time.sleep(1)
 
-        return close_ongoing_trades(
-            ongoing_trades, strike_option_type_exit_price_dict, current_time, data
-        )
+    return close_ongoing_trades(
+        ongoing_trades, constructed_data, current_time, data, strike_optiontype_exitprice_dict
+    )
 
 
 def buy_alice_blue_trades(self, data, quantity, expiry: datetime.date, nfo_type):
@@ -175,6 +178,7 @@ def buy_alice_blue_trades(self, data, quantity, expiry: datetime.date, nfo_type)
         if order_status["order_status"] == STATUS.COMPLETE:
             data["entry_price"] = order_status["average_price"]
             return self.create_object(data, kwargs={})
+        time.sleep(1)
 
     capture_exception(Exception(order_status["rejection_reason"], order_status))
 
