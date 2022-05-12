@@ -4,6 +4,7 @@ import json
 from pprint import pprint
 
 import matplotlib.pyplot as plt
+from celery.worker import strategy
 from dateutil import parser
 from sqlalchemy import and_
 from sqlalchemy.dialects.postgresql import UUID
@@ -68,34 +69,27 @@ def generate_csv():
 # pprint(strategy_id)
 
 
-if __name__ != "__main__":
-    ## uncomment if you want to download db data to csv
-    # with app.app_context():
-    #     generate_csv()
-
-    x = []
-    y = []
-
-    # for row in pd.read_csv('nfo_new.csv', nrows=1000):
-    #     pass
-
+def show_chart(strategy_id=100, file_name="db_data/till_28_apr.csv"):
     date_profit_dict = {}
-    with open("db_data/till_26_mar.csv", "r") as csvfile:
+    with open(file_name, "r") as csvfile:
         lines = csv.reader(csvfile, delimiter=",")
+        strategy_name = ""
         for row in lines:
             # strategy_id
-            if row[10] == "3":
+            if row[10] == str(strategy_id):
                 try:
                     exited_at_date_time = parser.parse(row[7])
                     date_ = exited_at_date_time.date()
-                    if date_ in date_profit_dict:
+                    if date_ in date_profit_dict and date_ >= datetime.date(2022,2,3):
                         date_profit_dict[date_] = date_profit_dict[date_] + int(
                             eval(row[5])
                         )
                     else:
                         date_profit_dict[date_] = int(eval(row[5]))
+                    strategy_name = row[11]
                 except:
                     pass
+
 
     # date_profit_dict = {}
     # with open(
@@ -116,6 +110,7 @@ if __name__ != "__main__":
     #                     date_profit_dict[date_] = int(eval(row[5]))
     #             except:
     #                 pass
+    x, y = [], []
 
     sum = 0
     for key, value in date_profit_dict.items():
@@ -142,10 +137,22 @@ if __name__ != "__main__":
     plt.xticks(rotation=25)
     plt.xlabel("date_time")
     plt.ylabel("profit")
-    plt.title("banknifty", fontsize=20)
+    plt.title(strategy_name, fontsize=20)
     plt.grid()
     plt.legend()
     plt.show()
+
+
+if __name__ == "__main__":
+    ## uncomment if you want to download db data to csv
+    # with app.app_context():
+    #     generate_csv()
+
+    # for row in pd.read_csv('nfo_new.csv', nrows=1000):
+    #     pass
+    strategy_ids = [3, 5, 7, 9, 11, 12, 26, 28, 40, 41, 98, 99, 100, 101]
+    for strategy_id in strategy_ids:
+        show_chart(strategy_id)
 
 
 def add_column():
@@ -348,6 +355,30 @@ def func():
         print(short_loss)
 
 
+class my_gen:
+    def __init__(self, num):
+        self.last = num
+        self.first = 0
+
+    def __next__(self):
+        if self.first == self.last:
+            raise StopIteration()
+
+        val = self.first ** 2
+        self.first += 1
+        return val
+
+
+#
+# r = my_gen(100)
+# while True:
+#     try:
+#         output = next(r)
+#         print(output)
+#     except StopIteration as e:
+#         pass
+#
+
 
 class my_gen:
     def __init__(self, num):
@@ -362,27 +393,6 @@ class my_gen:
         self.first += 1
         return val
 
-r = my_gen(100)
-while True:
-    try:
-        output = next(r)
-        print(output)
-    except StopIteration as e:
-        pass
-
-
-class my_gen:
-    def __init__(self, num):
-        self.last = num
-        self.first = 0
-
-    def __next__(self):
-        if self.first == self.last:
-            raise StopIteration()
-
-        val = self.first ** 2
-        self.first += 1
-        return val
 
 # r = my_gen(100)
 # while True:
