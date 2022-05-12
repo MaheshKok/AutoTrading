@@ -1,8 +1,6 @@
-import copy
 import threading
 from datetime import datetime
 from typing import List
-import concurrent.futures
 
 import requests
 from sqlalchemy.util._collections import _LW

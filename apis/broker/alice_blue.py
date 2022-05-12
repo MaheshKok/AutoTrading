@@ -1,7 +1,6 @@
 import concurrent.futures
 import datetime
 import logging
-import threading
 import time
 
 from alice_blue import AliceBlue
@@ -141,8 +140,8 @@ def buy_alice_blue_trades(self, data, quantity, expiry: datetime.date, nfo_type)
       call type [ for ex: either CE, PE ]
       nfo type [ for ex: either future or option]
     """
-    from main import telegram_bot
     from apis.utils import STATUS
+    from main import telegram_bot
 
     alice = get_alice_blue_obj()
 
