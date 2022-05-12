@@ -1,5 +1,7 @@
+import concurrent.futures
 import datetime
 import logging
+import time
 
 from alice_blue import AliceBlue
 from alice_blue import OrderType
@@ -49,6 +51,32 @@ def get_alice_blue_obj():
         return alice
 
 
+def place_close_order(alice, symbol, expiry: datetime.date, nfo_type, strike, quantity):
+    option_type = "ce" if quantity > 0 else "pe"
+    instrument = alice.get_instrument_for_fno(
+        symbol=symbol,
+        expiry_date=expiry,
+        is_fut=nfo_type != "option",
+        strike=strike,
+        is_CE=option_type == "ce",
+    )
+
+    place_order_response = alice.place_order(
+        transaction_type=TransactionType.Sell,
+        instrument=instrument,
+        quantity=quantity if quantity > 0 else (-1 * quantity),
+        order_type=OrderType.Market,
+        product_type=ProductType.Delivery,
+        price=0.0,
+        trigger_price=None,
+        stop_loss=None,
+        square_off=None,
+        trailing_sl=None,
+        is_amo=False,
+    )
+    return {f"{strike}_{option_type}": place_order_response["data"]["oms_order_id"]}
+
+
 def close_alice_blue_trades(
     strike_quantity_dict,
     symbol,
@@ -57,6 +85,7 @@ def close_alice_blue_trades(
     ongoing_trades,
     data,
     current_time,
+constructed_data
 ):
     """
     assumptions
@@ -69,51 +98,36 @@ def close_alice_blue_trades(
     from apis.utils import close_ongoing_trades
 
     alice = get_alice_blue_obj()
-    strike_option_type_close_order_id_dict = {}
 
     if isinstance(expiry, str):
         expiry = datetime.datetime.strptime(expiry, "%d %b %Y").date()
 
-    for strike, quantity in strike_quantity_dict.items():
-        option_type = "ce" if quantity > 0 else "pe"
-        instrument = alice.get_instrument_for_fno(
-            symbol=symbol,
-            expiry_date=expiry,
-            is_fut=nfo_type != "option",
-            strike=strike,
-            is_CE=option_type == "ce",
-        )
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        place_order_futures = [
+            executor.submit(
+                place_close_order, alice, symbol, expiry, nfo_type, strike, quantity
+            )
+            for strike, quantity in strike_quantity_dict.items()
+        ]
 
-        place_order_response = alice.place_order(
-            transaction_type=TransactionType.Sell,
-            instrument=instrument,
-            quantity=quantity if quantity > 0 else (-1 * quantity),
-            order_type=OrderType.Market,
-            product_type=ProductType.Delivery,
-            price=0.0,
-            trigger_price=None,
-            stop_loss=None,
-            square_off=None,
-            trailing_sl=None,
-            is_amo=False,
-        )
-        strike_option_type_close_order_id_dict[
-            f"{strike}_{option_type}"
-        ] = place_order_response["data"]["oms_order_id"]
+        place_order_future_results = [
+            place_order_future.result() for place_order_future in place_order_futures
+        ]
 
-    strike_option_type_exit_price_dict = {}
-    # check for this
-    for strike_option_type, order_id in strike_option_type_close_order_id_dict.items():
-        order_history = alice.get_order_history(order_id)["data"][0]
-        if order_history["order_status"] == "complete":
-            strike_option_type_exit_price_dict[strike_option_type] = order_history[
-                "average_price"
-            ]
-        else:
-            print(order_history)
+        strike_optiontype_exitprice_dict = {}
+        for place_order_future_result in place_order_future_results:
+            for strike_option_type, order_id in place_order_future_result.items():
+                order_history = alice.get_order_history(order_id)["data"][0]
+                for _ in range(10):
+                    if order_history["order_status"] == "complete":
+                        strike_optiontype_exitprice_dict[
+                            strike_option_type
+                        ] = order_history["average_price"]
+                        break
+                    time.sleep(1)
 
     return close_ongoing_trades(
-        ongoing_trades, strike_option_type_exit_price_dict, current_time, data
+        ongoing_trades, constructed_data, current_time, data, strike_optiontype_exitprice_dict
     )
 
 
@@ -126,8 +140,8 @@ def buy_alice_blue_trades(self, data, quantity, expiry: datetime.date, nfo_type)
       call type [ for ex: either CE, PE ]
       nfo type [ for ex: either future or option]
     """
-    from main import telegram_bot
     from apis.utils import STATUS
+    from main import telegram_bot
 
     alice = get_alice_blue_obj()
 
@@ -163,6 +177,7 @@ def buy_alice_blue_trades(self, data, quantity, expiry: datetime.date, nfo_type)
         if order_status["order_status"] == STATUS.COMPLETE:
             data["entry_price"] = order_status["average_price"]
             return self.create_object(data, kwargs={})
+        time.sleep(1)
 
     capture_exception(Exception(order_status["rejection_reason"], order_status))
 
