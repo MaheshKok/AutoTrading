@@ -131,7 +131,7 @@ constructed_data
     )
 
 
-def buy_alice_blue_trades(self, data, quantity, expiry: datetime.date, nfo_type):
+def buy_alice_blue_trades(self, data, expiry: datetime.date, nfo_type):
     """
     assumptions
      all trades to be executed should belong to same:
@@ -148,7 +148,7 @@ def buy_alice_blue_trades(self, data, quantity, expiry: datetime.date, nfo_type)
     if isinstance(expiry, str):
         expiry = datetime.datetime.strptime(expiry, "%d %b %Y").date()
 
-    quantity = quantity or data["quantity"]
+    quantity = data["quantity"]
     instrument = alice.get_instrument_for_fno(
         symbol=data["symbol"],
         expiry_date=expiry,

@@ -80,13 +80,14 @@ def show_chart(strategy_id=100, file_name="db_data/till_28_apr.csv"):
                 try:
                     exited_at_date_time = parser.parse(row[7])
                     date_ = exited_at_date_time.date()
-                    if date_ in date_profit_dict and date_ >= datetime.date(2022,2,3):
-                        date_profit_dict[date_] = date_profit_dict[date_] + int(
-                            eval(row[5])
-                        )
-                    else:
-                        date_profit_dict[date_] = int(eval(row[5]))
-                    strategy_name = row[11]
+                    if date_ >= datetime.date(2022, 2, 3):
+                        if date_ in date_profit_dict:
+                            date_profit_dict[date_] = date_profit_dict[date_] + int(
+                                eval(row[5])
+                            )
+                        else:
+                            date_profit_dict[date_] = int(eval(row[5]))
+                        strategy_name = row[11]
                 except:
                     pass
 
@@ -142,7 +143,7 @@ def show_chart(strategy_id=100, file_name="db_data/till_28_apr.csv"):
     plt.show()
 
 
-if __name__ == "__main__":
+if __name__ != "__main__":
     ## uncomment if you want to download db data to csv
     # with app.app_context():
     #     generate_csv()
@@ -201,7 +202,7 @@ def difference_call():
         action = "buy"
         for nfo in (
             NFO.query.filter(
-                NFO.strategy_id == 12, NFO.placed_at >= datetime.datetime(2022, 1, 13)
+                NFO.strategy_id == 99, NFO.placed_at >= datetime.datetime(2022, 1, 13)
             )
             .order_by(NFO.placed_at)
             .all()
@@ -215,7 +216,7 @@ def difference_call():
                 action = on_going_action
 
 
-# difference_call()
+difference_call()
 
 
 def compare_db_with_tdview_profit():
@@ -367,75 +368,6 @@ class my_gen:
         self.first += 1
         return val
 
-
-#
-# r = my_gen(100)
-# while True:
-#     try:
-#         output = next(r)
-#         print(output)
-#     except StopIteration as e:
-#         pass
-#
-
-
-class my_gen:
-    def __init__(self, num):
-        self.last = num
-        self.first = 0
-
-    def __next__(self):
-        if self.first == self.last:
-            raise StopIteration()
-
-        val = self.first ** 2
-        self.first += 1
-        return val
-
-
-# r = my_gen(100)
-# while True:
-#     try:
-#         output = next(r)
-#         print(output)
-#     except StopIteration as e:
-#         pass
-
-
-class my_gen:
-    def __init__(self, num):
-        self.last = num
-        self.first = 0
-
-    def __next__(self):
-        if self.first == self.last:
-            raise StopIteration()
-
-        val = self.first ** 2
-        self.first += 1
-        return val
-
-# r = my_gen(100)
-# while True:
-#     try:
-#         output = next(r)
-#         print(output)
-#     except StopIteration as e:
-#         pass
-
-
-class my_gen:
-    def __init__(self, num):
-        self.last = num
-        self.first = 0
-
-    def __next__(self):
-        if self.first == self.last:
-            raise StopIteration()
-
-        val = self.first ** 2
-        self.first += 1
-        return val
 
 # r = my_gen(100)
 # while True:

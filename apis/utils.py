@@ -170,7 +170,9 @@ def get_final_data_to_ingest(data, expiry, current_time, constructed_data):
     return data
 
 
-def close_ongoing_trades(ongoing_trades, constructed_data, current_time, data, broker_data=None):
+def close_ongoing_trades(
+    ongoing_trades, constructed_data, current_time, data, broker_data=None
+):
     from main import app
 
     mappings = []
@@ -179,7 +181,9 @@ def close_ongoing_trades(ongoing_trades, constructed_data, current_time, data, b
         for trade in ongoing_trades:
             exit_price = constructed_data[f"{trade.strike}_{trade.option_type}"]
             if broker_data:
-                exit_price = broker_data.get(f"{trade.strike}_{trade.option_type}") or exit_price
+                exit_price = (
+                    broker_data.get(f"{trade.strike}_{trade.option_type}") or exit_price
+                )
 
             profit = get_profit(trade, exit_price)
             future_exit_price = data.get("future_entry_price", 0)
@@ -263,25 +267,19 @@ def task_buying_trade_of_next_expiry_on_expiry_day(
     )
 
     constructed_data = get_constructed_data(data["symbol"], expiry=next_expiry)
-    next_expiry_data = get_final_data_to_ingest(
-        data=data,
-        expiry=next_expiry,
-        current_time=current_time,
-        constructed_data=constructed_data,
-    )
 
-    args = [self, next_expiry_data, next_expiry, current_time, constructed_data]
-    if current_expirys_ongoing_action != payload_action:
-        # buy one trade from next expiry
-        return task_buying_trade(*args)
+    args = [self, data, next_expiry, current_time, constructed_data]
+    if current_expirys_ongoing_action == payload_action:
+        data["quantity"] = (
+                sum(trade.quantity for trade in today_expirys_ongoing_trades)
+                + today_expirys_ongoing_trades[0].quantity
+        )
 
-    total_ongoing_trades = (
-        sum(trade.quantity for trade in today_expirys_ongoing_trades) + 1
-    )
-    quantity = (
-        total_ongoing_trades if payload_action == ACTION.BUY else -total_ongoing_trades
-    )
-    return task_buying_trade(*args, quantity)
+    # this is important
+    if payload_action == ACTION.SELL:
+        data["quantity"] = -data["quantity"]
+
+    return task_buying_trade(*args)
 
 
 def close_trades(data, ongoing_trades, expiry, current_time, constructed_data):
@@ -296,7 +294,7 @@ def close_trades(data, ongoing_trades, expiry, current_time, constructed_data):
                 ongoing_trades,
                 data,
                 current_time,
-                constructed_data
+                constructed_data,
             )
     return close_ongoing_trades(ongoing_trades, constructed_data, current_time, data)
 
@@ -322,7 +320,7 @@ def task_closing_trade(data, expiry, current_time, constructed_data, close_it=Fa
 
 
 def task_buying_trade(
-    self, payload_data, expiry, current_time, constructed_data, quantity=None
+    self, payload_data, expiry, current_time, constructed_data
 ):
     from main import app
 
@@ -341,7 +339,6 @@ def task_buying_trade(
             return buy_alice_blue_trades(
                 self,
                 data,
-                quantity,
                 expiry,
                 NFO_TYPE.OPTION,
             )
@@ -399,7 +396,7 @@ def buy_or_sell_option(self, data: dict):
         return *task_closing_trade(
             data, current_expiry, current_time, constructed_data, close_it=True
         ), task_buying_trade_of_next_expiry_on_expiry_day(
-            today_expirys_ongoing_trades, data, next_expiry, current_time
+            self, today_expirys_ongoing_trades, data, next_expiry, current_time
         )
 
     return handle_buy_and_sell_trade(self, data, next_expiry, current_time)
