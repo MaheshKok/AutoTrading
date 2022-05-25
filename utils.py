@@ -22,7 +22,7 @@ from models.till_yesterdays_profit import TillYesterdaysProfit
 
 def generate_csv():
     with app.app_context():
-        file = "db_data/28_apr.csv"
+        file = "db_data/19_may.csv"
         with open(file, "w") as csvfile:
             outcsv = csv.writer(
                 csvfile, delimiter=",", quotechar='"', quoting=csv.QUOTE_MINIMAL
@@ -216,7 +216,7 @@ def difference_call():
                 action = on_going_action
 
 
-difference_call()
+# difference_call()
 
 
 def compare_db_with_tdview_profit():
