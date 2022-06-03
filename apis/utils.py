@@ -16,12 +16,10 @@ from models.completed_profit import CompletedProfit
 from models.nfo import NFO
 
 EXPIRY_LISTS = [
-    "28 APR 2022",
-    "05 MAY 2022",
-    "12 MAY 2022",
-    "19 MAY 2022",
-    "26 MAY 2022",
     "02 JUN 2022",
+    "09 JUN 2022",
+    "16 JUN 2022",
+    "23 JUN 2022",
     "30 JUN 2022",
 ]
 
@@ -271,8 +269,8 @@ def task_buying_trade_of_next_expiry_on_expiry_day(
     args = [self, data, next_expiry, current_time, constructed_data]
     if current_expirys_ongoing_action == payload_action:
         data["quantity"] = (
-                sum(trade.quantity for trade in today_expirys_ongoing_trades)
-                + today_expirys_ongoing_trades[0].quantity
+            sum(trade.quantity for trade in today_expirys_ongoing_trades)
+            + today_expirys_ongoing_trades[0].quantity
         )
 
     # this is important
@@ -319,9 +317,7 @@ def task_closing_trade(data, expiry, current_time, constructed_data, close_it=Fa
         return close_trades(*args)
 
 
-def task_buying_trade(
-    self, payload_data, expiry, current_time, constructed_data
-):
+def task_buying_trade(self, payload_data, expiry, current_time, constructed_data):
     from main import app
 
     data = get_final_data_to_ingest(
