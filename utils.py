@@ -202,7 +202,7 @@ def difference_call():
         action = "buy"
         for nfo in (
             NFO.query.filter(
-                NFO.strategy_id == 99, NFO.placed_at >= datetime.datetime(2022, 1, 13)
+                NFO.strategy_id == 98, NFO.placed_at >= datetime.datetime(2022, 6, 6)
             )
             .order_by(NFO.placed_at)
             .all()

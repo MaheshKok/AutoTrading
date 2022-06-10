@@ -301,12 +301,13 @@ def task_closing_trade(data, expiry, current_time, constructed_data, close_it=Fa
     from main import app
 
     with app.app_context():
-        ongoing_trades = NFO.query.filter_by(
-            strategy_id=data["strategy_id"],
-            exited_at=None,
-            nfo_type=NFO_TYPE.OPTION,
-            symbol=data["symbol"],
-            expiry=expiry,
+        ongoing_trades = NFO.query.filter(
+            NFO.strategy_id == data["strategy_id"],
+            NFO.exited_at == None,
+            NFO.nfo_type == NFO_TYPE.OPTION,
+            NFO.symbol == data["symbol"],
+            NFO.expiry == expiry,
+            NFO.placed_at != current_time,
         ).all()
 
     args = [data, ongoing_trades, expiry, current_time, constructed_data]
