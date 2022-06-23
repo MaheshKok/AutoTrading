@@ -1,6 +1,8 @@
 import csv
 import datetime
+import itertools
 import json
+import sys
 from pprint import pprint
 
 import matplotlib.pyplot as plt
@@ -22,7 +24,7 @@ from models.till_yesterdays_profit import TillYesterdaysProfit
 
 def generate_csv():
     with app.app_context():
-        file = "db_data/19_may.csv"
+        file = "db_data/obselete/10_jun.csv"
         with open(file, "w") as csvfile:
             outcsv = csv.writer(
                 csvfile, delimiter=",", quotechar='"', quoting=csv.QUOTE_MINIMAL
@@ -326,7 +328,7 @@ def read_tv_alerts():
 # read_tv_alerts()
 
 
-def func():
+def calculate_long_short_p_n_l():
     with open(
         "trading_view_chart_calls/testing_Mahesh_strategy_[RS]_V0_2022-04-14.csv", "r"
     ) as csvfile:
@@ -353,6 +355,44 @@ def func():
         print()
         print(short_profit)
         print(short_loss)
+
+
+def calculate_db_long_short_p_n_l():
+    with open("db_data/till_10_jun.csv", "r") as csvfile:
+        lines = csv.reader(csvfile, delimiter=",")
+        long_profit = 0
+        short_profit = 0
+        long_loss = 0
+        short_loss = 0
+        all_profit = dict()
+        for index, row in enumerate(lines):
+            if index > 0:
+                all_profit[row[10]] = all_profit.get(row[10], 0.0) + float(row[5])
+
+                # profit = float(row[5]) if row[5] else 0
+                # if int(row[2]) > 0:
+                #     if profit > 0:
+                #         long_profit += profit
+                #     else:
+                #         long_loss += profit
+                # elif profit > 0:
+                #     short_profit += profit
+                # else:
+                #     short_loss += profit
+
+        # print(long_profit)
+        # print(long_loss)
+        # print()
+        # print(short_profit)
+        # print(short_loss)
+        #
+        # print(long_profit + long_loss + short_profit + short_loss)
+
+        print(sum([value for item, value in all_profit.items()]))
+        print(all_profit)
+
+
+# calculate_db_long_short_p_n_l()
 
 
 class my_gen:
@@ -512,3 +552,143 @@ class my_gen:
 #             db.session.add(new_nfo)
 #
 #         db.session.commit()
+
+
+def get_output(arg_1, arg_2):
+    var_1 = next(arg_1)
+    var_1 = next(arg_1)
+    var_2 = next(arg_2)
+    output = []
+    var_2 = next(arg_2)
+
+    while True:
+        try:
+            if var_1 and var_2:
+                if var_1.split(",")[0] == "17937":
+                    pass
+                if int(var_1.split(",")[0]) < int(var_2.split(",")[0]):
+                    var_1 = var_1.rstrip('\n')
+                    output.append(var_1)
+                    var_1 = next(arg_1)
+                else:
+                    var_2 = var_2.rstrip('\n')
+                    output.append(var_2)
+                    var_2 = next(arg_2)
+        except StopIteration as e:
+            if output[-1] == var_1:
+                while True:
+                    try:
+                        var_2 = var_2.rstrip('\n')
+                        output.append(var_2)
+                        var_2 = next(arg_2)
+                    except StopIteration as e:
+                        break
+            else:
+                while True:
+
+                    try:
+                        var_1 = var_1.rstrip('\n')
+                        output.append(var_1)
+                        var_1 = next(arg_1)
+                    except StopIteration as e:
+                        break
+            break
+    return output
+
+
+def merge_csvs():
+    till_28_apr = open("db_data/obselete/till_28_apr.csv", "r")
+    may_19 = open("db_data/obselete/19_may.csv", "r")
+
+    output = get_output(till_28_apr, may_19)
+
+    print(len(output))
+    arg_1 = iter(output)
+    arg_2 = open("db_data/obselete/10_jun.csv", "r")
+
+    final_output = get_output(arg_1, arg_2)
+    print(len(final_output))
+
+    full_final_output = [item.split(",") for item in final_output]
+    file = "db_data/new_till_10_jun.csv"
+    with open(file, "w") as csvfile:
+        outcsv = csv.writer(
+            csvfile
+        )
+        header = [
+            "id",
+            "nfo_type",
+            "quantity",
+            "entry_price",
+            "exit_price",
+            "profit",
+            "placed_at",
+            "exited_at",
+            "strike",
+            "option_type",
+            "strategy_id",
+            "strategy_name",
+            "symbol",
+            "future_entry_price",
+            "future_exit_price",
+            "future_profit",
+        ]
+        outcsv.writerow(header)
+        outcsv.writerows(full_final_output)
+
+    # assert len(output) == len(list(till_28_apr)) + len(list(may_19)) - 1
+
+
+# merge_csvs()
+
+
+def refactor_csv():
+    file = "db_data/filtered_till_10_jun.csv"
+    with open(file, "w") as csvfile:
+        outcsv = csv.writer(
+            csvfile, delimiter=",", quotechar='"', quoting=csv.QUOTE_MINIMAL
+        )
+        # header = NFO.__table__.columns.keys()
+        header = [
+            "id",
+            "nfo_type",
+            "quantity",
+            "entry_price",
+            "exit_price",
+            "profit",
+            "placed_at",
+            "exited_at",
+            "strike",
+            "option_type",
+            "strategy_id",
+            "strategy_name",
+            "symbol",
+            "future_entry_price",
+            "future_exit_price",
+            "future_profit",
+        ]
+        outcsv.writerow(header)
+
+        file = open("db_data/new_till_10_jun.csv", "r")
+        final_output = []
+        for index, row in enumerate(file.readlines()):
+            if row.split(",")[0] == "37684":
+                print("")
+
+            if index > 0:
+                add_null = ["0.0", "0.0", "0.0"]
+                if len(row.split(",")) == 13:
+                    row = row.rstrip("\n")
+                    final_output.append([*row.split(","), *add_null])
+                elif row.split(",")[13] == "":
+                    row = row.rstrip("\n")
+                    row = [*row.split(",")[:13], *add_null]
+                    final_output.append(row)
+                else:
+                    row = row.rstrip("\n")
+                    final_output.append(row.split(","))
+        outcsv.writerows(final_output)
+
+
+# refactor_csv()
+#
