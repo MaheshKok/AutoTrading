@@ -16,12 +16,15 @@ from models.completed_profit import CompletedProfit
 from models.nfo import NFO
 
 EXPIRY_LISTS = [
-    "23 JUN 2022",
-    "30 JUN 2022",
-    "07 JUL 2022",
     "14 JUL 2022",
     "21 JUL 2022",
     "28 JUL 2022",
+    "04 AUG 2022",
+    "11 AUG 2022",
+    "18 AUG 2022",
+    "25 AUG 2022",
+    "01 SEP 2022",
+    "08 SEP 2022",
 ]
 
 

@@ -24,7 +24,7 @@ from models.till_yesterdays_profit import TillYesterdaysProfit
 
 def generate_csv():
     with app.app_context():
-        file = "db_data/obselete/10_jun.csv"
+        file = f"db_data/{datetime.datetime.now().date()}.csv"
         with open(file, "w") as csvfile:
             outcsv = csv.writer(
                 csvfile, delimiter=",", quotechar='"', quoting=csv.QUOTE_MINIMAL
@@ -204,7 +204,7 @@ def difference_call():
         action = "buy"
         for nfo in (
             NFO.query.filter(
-                NFO.strategy_id == 98, NFO.placed_at >= datetime.datetime(2022, 6, 6)
+                NFO.strategy_id == 93, NFO.placed_at >= datetime.datetime(2022, 6, 6)
             )
             .order_by(NFO.placed_at)
             .all()
@@ -218,7 +218,7 @@ def difference_call():
                 action = on_going_action
 
 
-# difference_call()
+difference_call()
 
 
 def compare_db_with_tdview_profit():
@@ -692,3 +692,48 @@ def refactor_csv():
 
 # refactor_csv()
 #
+
+def dump_csv_to_db():
+    header = [
+        "id",
+        "nfo_type",
+        "quantity",
+        "entry_price",
+        "exit_price",
+        "profit",
+        "placed_at",
+        "exited_at",
+        "strike",
+        "option_type",
+        "strategy_id",
+        "strategy_name",
+        "symbol",
+        "future_entry_price",
+        "future_exit_price",
+        "future_profit",
+    ]
+    with app.app_context():
+        with open("db_data/filtered_till_10_jun.csv") as file:
+            i = 0
+            data_to_be_inserted = []
+            for index, row in enumerate(file.readlines()):
+                if index > 0:
+                    if not row.split(",")[4]:
+                        continue
+                    new_lst = row.rstrip("\n").split(",")
+                    # db.session.add(NFO(**dict(zip(header, new_lst))))
+                    data_to_be_inserted.append(dict(zip(header, new_lst)))
+                    i = i + 1
+                    print(index)
+                    if i == 400:
+                        db.session.bulk_insert_mappings(NFO, data_to_be_inserted)
+                        print("committed ... ")
+                        i = 0
+                        data_to_be_inserted = []
+            db.session.commit()
+
+# dump_csv_to_db()
+
+
+# from sqlalchemy_batch_inserts import enable_batch_inserting
+
