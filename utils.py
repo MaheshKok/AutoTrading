@@ -1,3 +1,4 @@
+import contextlib
 import csv
 import datetime
 import itertools
@@ -79,20 +80,16 @@ def show_chart(strategy_id=100, file_name="db_data/till_28_apr.csv"):
         for row in lines:
             # strategy_id
             if row[10] == str(strategy_id):
-                try:
+                with contextlib.suppress(Exception):
                     exited_at_date_time = parser.parse(row[7])
                     date_ = exited_at_date_time.date()
                     if date_ >= datetime.date(2022, 2, 3):
-                        if date_ in date_profit_dict:
-                            date_profit_dict[date_] = date_profit_dict[date_] + int(
-                                eval(row[5])
-                            )
-                        else:
-                            date_profit_dict[date_] = int(eval(row[5]))
+                        date_profit_dict[date_] = (
+                            date_profit_dict[date_] + int(eval(row[5]))
+                            if date_ in date_profit_dict
+                            else int(eval(row[5]))
+                        )
                         strategy_name = row[11]
-                except:
-                    pass
-
     # date_profit_dict = {}
     # with open(
     #     "trading_view_chart_calls/testing_Mahesh_strategy_[RS]_V0_2022-02-25.csv", "r"
@@ -114,11 +111,11 @@ def show_chart(strategy_id=100, file_name="db_data/till_28_apr.csv"):
     #                 pass
     x, y = [], []
 
-    sum = 0
+    profit = 0
     for key, value in date_profit_dict.items():
         x.append(key)
-        sum = sum + value
-        y.append(sum)
+        profit = profit + value
+        y.append(profit)
 
     plt.plot(x, y, color="g", linestyle="-", marker="o", label="profit")
 
@@ -177,17 +174,17 @@ def add_column():
 # add_column()
 
 
-# def delete_rows():
-#     with app.app_context():
-#         delete_q = NFO.__table__.delete().where(
-#             NFO.exited_at != None
-#         )
-#         db.session.execute(delete_q)
-#         db.session.commit()
-#         print("rows deleted ")
-#
-#
-# delete_rows()
+def delete_rows():
+    with app.app_context():
+        delete_q = NFO.__table__.delete().where(
+            NFO.exited_at != None
+        )
+        db.session.execute(delete_q)
+        db.session.commit()
+        print("rows deleted ")
+
+
+delete_rows()
 
 
 def undo_last_action():
@@ -218,7 +215,7 @@ def difference_call():
                 action = on_going_action
 
 
-difference_call()
+# difference_call()
 
 
 def compare_db_with_tdview_profit():
@@ -364,7 +361,7 @@ def calculate_db_long_short_p_n_l():
         short_profit = 0
         long_loss = 0
         short_loss = 0
-        all_profit = dict()
+        all_profit = {}
         for index, row in enumerate(lines):
             if index > 0:
                 all_profit[row[10]] = all_profit.get(row[10], 0.0) + float(row[5])
@@ -388,7 +385,7 @@ def calculate_db_long_short_p_n_l():
         #
         # print(long_profit + long_loss + short_profit + short_loss)
 
-        print(sum([value for item, value in all_profit.items()]))
+        print(sum(value for item, value in all_profit.items()))
         print(all_profit)
 
 
@@ -567,18 +564,18 @@ def get_output(arg_1, arg_2):
                 if var_1.split(",")[0] == "17937":
                     pass
                 if int(var_1.split(",")[0]) < int(var_2.split(",")[0]):
-                    var_1 = var_1.rstrip('\n')
+                    var_1 = var_1.rstrip("\n")
                     output.append(var_1)
                     var_1 = next(arg_1)
                 else:
-                    var_2 = var_2.rstrip('\n')
+                    var_2 = var_2.rstrip("\n")
                     output.append(var_2)
                     var_2 = next(arg_2)
         except StopIteration as e:
             if output[-1] == var_1:
                 while True:
                     try:
-                        var_2 = var_2.rstrip('\n')
+                        var_2 = var_2.rstrip("\n")
                         output.append(var_2)
                         var_2 = next(arg_2)
                     except StopIteration as e:
@@ -587,7 +584,7 @@ def get_output(arg_1, arg_2):
                 while True:
 
                     try:
-                        var_1 = var_1.rstrip('\n')
+                        var_1 = var_1.rstrip("\n")
                         output.append(var_1)
                         var_1 = next(arg_1)
                     except StopIteration as e:
@@ -612,9 +609,7 @@ def merge_csvs():
     full_final_output = [item.split(",") for item in final_output]
     file = "db_data/new_till_10_jun.csv"
     with open(file, "w") as csvfile:
-        outcsv = csv.writer(
-            csvfile
-        )
+        outcsv = csv.writer(csvfile)
         header = [
             "id",
             "nfo_type",
@@ -693,6 +688,7 @@ def refactor_csv():
 # refactor_csv()
 #
 
+
 def dump_csv_to_db():
     header = [
         "id",
@@ -732,8 +728,8 @@ def dump_csv_to_db():
                         data_to_be_inserted = []
             db.session.commit()
 
+
 # dump_csv_to_db()
 
 
 # from sqlalchemy_batch_inserts import enable_batch_inserting
-
