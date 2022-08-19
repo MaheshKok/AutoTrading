@@ -290,8 +290,8 @@ def task_buying_trade_of_next_expiry_on_expiry_day(
 
 
 def close_trades(data, ongoing_trades, expiry, current_time, constructed_data):
-    strike_quantity_dict = get_aggregated_trades(ongoing_trades)
     if broker_id := data.get("broker_id"):
+        strike_quantity_dict = get_aggregated_trades(ongoing_trades)
         if broker_id == BROKER.alice_blue_id:
             return close_alice_blue_trades(
                 strike_quantity_dict,
@@ -633,48 +633,121 @@ def get_computed_profit(strategy_id=None):
 
 
 def close_all_trades(strategy_id=None):
-    bank_nifty_constructed_data = get_constructed_data(symbol="BANKNIFTY")
-    nifty_constructed_data = get_constructed_data(symbol="NIFTY")
-    axis_bank_constructed_data = get_constructed_data(symbol="AXISBANK")
-    sbi_constructed_data = get_constructed_data(symbol="SBIN")
-    bajajauto_constructed_data = get_constructed_data(symbol="BAJAJ-AUTO")
-
-    update_mappings = []
+    # TODO: handle manual closing of brokers trades as well
+    current_expiry, next_expiry, todays_expiry = get_current_and_next_expiry()
     exited_at = datetime.now()
+    bank_nifty_current_expiry_constructed_data = get_constructed_data(
+        symbol="BANKNIFTY"
+    )
+    nifty_current_expiry_constructed_data = get_constructed_data(symbol="NIFTY")
 
-    for strategy_id in (
-        [strategy_id]
+    # axis_bank_constructed_data = get_constructed_data(symbol="AXISBANK")
+    # sbi_constructed_data = get_constructed_data(symbol="SBIN")
+    # bajajauto_constructed_data = get_constructed_data(symbol="BAJAJ-AUTO")
+
+    banknifty_ongoing_trades = (
+        NFO.query.filter_by(
+            exited_at=None,
+            symbol="BANKNIFTY",
+            strategy_id=strategy_id,
+            expiry=current_expiry,
+            broker_id=None,
+        ).all()
         if strategy_id
-        else (NFO.query.with_entities(NFO.strategy_id).distinct(NFO.strategy_id).all())
-    ):
-        for nfo in NFO.query.filter_by(strategy_id=strategy_id, exited_at=None).all():
+        else NFO.query.filter_by(
+            exited_at=None, symbol="BANKNIFTY", expiry=current_expiry, broker_id=None
+        ).all()
+    )
+    nifty_ongoing_trades = (
+        NFO.query.filter_by(
+            exited_at=None,
+            symbol="NIFTY",
+            strategy_id=strategy_id,
+            expiry=current_expiry,
+            broker_id=None,
+        ).all()
+        if strategy_id
+        else NFO.query.filter_by(
+            exited_at=None, symbol="NIFTY", expiry=current_expiry, broker_id=None
+        ).all()
+    )
+    ongoing_trades = {
+        "BANKNIFTY": banknifty_ongoing_trades,
+        "NIFTY": nifty_ongoing_trades,
+    }
 
-            if nfo.symbol == "BANKNIFTY":
-                constructed_data = bank_nifty_constructed_data
-            elif nfo.symbol == "NIFTY":
-                constructed_data = nifty_constructed_data
-            # elif nfo.symbol == "AXISBANK":
-            #     constructed_data = axis_bank_constructed_data
-            # elif nfo.symbol == "SBIN":
-            #     constructed_data = sbi_constructed_data
-            # elif nfo.symbol == "BAJAJ-AUTO":
-            #     constructed_data = bajajauto_constructed_data
-            else:
-                continue
+    for symbol, value in ongoing_trades.items():
+        if value:
+            args = (
+                [
+                    banknifty_ongoing_trades,
+                    bank_nifty_current_expiry_constructed_data,
+                ]
+                if symbol == "BANKNIFTY"
+                else [nifty_ongoing_trades, nifty_current_expiry_constructed_data]
+            )
 
-            ltp = (float(constructed_data[f"{nfo.strike}_{nfo.option_type}"]),)
-            profit = get_profit(nfo, ltp)
-            update_mapping = {
-                "id": nfo.id,
-                "profit": profit,
-                "exited_at": exited_at,
-                "exit_price": ltp,
-            }
-            update_mappings.append(update_mapping)
+            close_ongoing_trades(
+                *args,
+                exited_at,
+                {},
+            )
 
-    db.session.bulk_update_mappings(NFO, update_mappings)
-    db.session.commit()
+    if todays_expiry:
+        bank_nifty_next_expiry_constructed_data = get_constructed_data(
+            symbol="BANKNIFTY", expiry=next_expiry
+        )
+        nifty_next_expiry_constructed_data = get_constructed_data(
+            symbol="NIFTY", expiry=next_expiry
+        )
 
+        banknifty_ongoing_trades = (
+            NFO.query.filter_by(
+                exited_at=None,
+                symbol="BANKNIFTY",
+                strategy_id=strategy_id,
+                expiry=next_expiry,
+                broker_id=None,
+            ).all()
+            if strategy_id
+            else NFO.query.filter_by(
+                exited_at=None, symbol="BANKNIFTY", expiry=next_expiry, broker_id=None
+            ).all()
+        )
+        nifty_ongoing_trades = (
+            NFO.query.filter_by(
+                exited_at=None,
+                symbol="NIFTY",
+                strategy_id=strategy_id,
+                expiry=next_expiry,
+                broker_id=None,
+            ).all()
+            if strategy_id
+            else NFO.query.filter_by(
+                exited_at=None, symbol="NIFTY", expiry=next_expiry, broker_id=None
+            ).all()
+        )
+        ongoing_trades = {
+            "BANKNIFTY": banknifty_ongoing_trades,
+            "NIFTY": nifty_ongoing_trades,
+        }
+
+        for symbol, value in ongoing_trades.items():
+            if value:
+                args = (
+                    [
+                        banknifty_ongoing_trades,
+                        bank_nifty_next_expiry_constructed_data,
+                    ]
+                    if symbol == "BANKNIFTY"
+                    else [nifty_ongoing_trades, nifty_next_expiry_constructed_data]
+                )
+
+                close_ongoing_trades(
+                    *args,
+                    exited_at,
+                    {},
+                )
     return "All trades closed successfully"
 
 

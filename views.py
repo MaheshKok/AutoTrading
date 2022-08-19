@@ -91,13 +91,13 @@ def register_base_routes(app):
             capture_exception(Exception("this is random exception"))
             return "exception raised"
 
-    # @app.route("/api/close_trades/<strategy_id>")
-    # def close_specific_trades(strategy_id):
-    #     return close_all_trades(strategy_id)
-    #
-    # @app.route("/api/close_trades")
-    # def close_trades():
-    #     return close_all_trades()
+    @app.route("/api/close_trades/<strategy_id>")
+    def close_specific_trades(strategy_id):
+        return close_all_trades(strategy_id)
+
+    @app.route("/api/close_trades/all")
+    def close_trades():
+        return close_all_trades()
 
     @app.route("/api/thread")
     def test_threading():
