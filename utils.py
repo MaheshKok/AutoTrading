@@ -48,6 +48,8 @@ def generate_csv():
                 "future_entry_price",
                 "future_exit_price",
                 "future_profit",
+                "expiry",
+                "broker_id"
             ]
             outcsv.writerow(header)
 
@@ -594,20 +596,20 @@ def get_output(arg_1, arg_2):
 
 
 def merge_csvs():
-    till_28_apr = open("db_data/obselete/till_28_apr.csv", "r")
-    may_19 = open("db_data/obselete/19_may.csv", "r")
+    till_28_apr = open("db_data/2022-07-04.csv", "r")
+    may_19 = open("db_data/2022-07-19.csv", "r")
 
     output = get_output(till_28_apr, may_19)
 
     print(len(output))
     arg_1 = iter(output)
-    arg_2 = open("db_data/obselete/10_jun.csv", "r")
+    arg_2 = open("db_data/2022-08-04.csv", "r")
 
     final_output = get_output(arg_1, arg_2)
     print(len(final_output))
 
     full_final_output = [item.split(",") for item in final_output]
-    file = "db_data/new_till_10_jun.csv"
+    file = "db_data/new_till_4_sug.csv"
     with open(file, "w") as csvfile:
         outcsv = csv.writer(csvfile)
         header = [
@@ -638,7 +640,7 @@ def merge_csvs():
 
 
 def refactor_csv():
-    file = "db_data/filtered_till_10_jun.csv"
+    file = "db_data/filtered_till_4_aug.csv"
     with open(file, "w") as csvfile:
         outcsv = csv.writer(
             csvfile, delimiter=",", quotechar='"', quoting=csv.QUOTE_MINIMAL
@@ -661,10 +663,12 @@ def refactor_csv():
             "future_entry_price",
             "future_exit_price",
             "future_profit",
+            "expiry",
+            "broker_id"
         ]
         outcsv.writerow(header)
 
-        file = open("db_data/new_till_10_jun.csv", "r")
+        file = open("db_data/new_till_4_sug.csv", "r")
         final_output = []
         for index, row in enumerate(file.readlines()):
             if row.split(",")[0] == "37684":
@@ -707,6 +711,8 @@ def dump_csv_to_db():
         "future_entry_price",
         "future_exit_price",
         "future_profit",
+        "expiry",
+        "broker_id"
     ]
     with app.app_context():
         with open("db_data/filtered_till_10_jun.csv") as file:
@@ -732,4 +738,76 @@ def dump_csv_to_db():
 # dump_csv_to_db()
 
 
-# from sqlalchemy_batch_inserts import enable_batch_inserting
+
+def remove_duplicates_from_csv():
+    header = [
+        "id",
+        "nfo_type",
+        "quantity",
+        "entry_price",
+        "exit_price",
+        "profit",
+        "placed_at",
+        "exited_at",
+        "strike",
+        "option_type",
+        "strategy_id",
+        "strategy_name",
+        "symbol",
+        "future_entry_price",
+        "future_exit_price",
+        "future_profit",
+        "expiry",
+        "broker_id"
+    ]
+    with app.app_context():
+        with open("db_data/filtered_till_4_aug.csv") as file:
+            i = 0
+            data_to_be_inserted = {}
+            rows_added = []
+            for index, row in enumerate(file.readlines()):
+                if index > 0:
+                    if not row.split(",")[4]:
+                        continue
+                    new_lst = row.rstrip("\n").split(",")
+                    # db.session.add(NFO(**dict(zip(header, new_lst))))
+                    # if new_lst[0] not in rows_added:
+                    rows_added.append(new_lst[0])
+                    data_to_be_inserted[new_lst[0]] = dict(zip(header, new_lst))
+                    # data_to_be_inserted.append(dict(zip(header, new_lst)))
+                    i = i + 1
+                    print(index)
+
+        with app.app_context():
+            file = "db_data/without_duplicates_till_4_aug.csv"
+            with open(file, "w") as csvfile:
+                outcsv = csv.writer(
+                    csvfile, delimiter=",", quotechar='"', quoting=csv.QUOTE_MINIMAL
+                )
+                # header = NFO.__table__.columns.keys()
+                header = [
+                    "id",
+                    "nfo_type",
+                    "quantity",
+                    "entry_price",
+                    "exit_price",
+                    "profit",
+                    "placed_at",
+                    "exited_at",
+                    "strike",
+                    "option_type",
+                    "strategy_id",
+                    "strategy_name",
+                    "symbol",
+                    "future_entry_price",
+                    "future_exit_price",
+                    "future_profit",
+                    "expiry",
+                    "broker_id"
+                ]
+                outcsv.writerow(header)
+
+                for record, values in data_to_be_inserted.items():
+                    outcsv.writerow([*values.values()])
+
+# remove_duplicates_from_csv()
