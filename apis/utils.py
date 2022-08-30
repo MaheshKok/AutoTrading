@@ -628,7 +628,7 @@ def get_computed_profit(strategy_id=None):
     }
 
 
-def close_all_trades(strategy_id=None):
+def close_all_trades(strategy_id):
     # TODO: handle manual closing of brokers trades as well
     current_expiry, next_expiry, todays_expiry = get_current_and_next_expiry()
     exited_at = datetime.now()
@@ -641,32 +641,20 @@ def close_all_trades(strategy_id=None):
     # sbi_constructed_data = get_constructed_data(symbol="SBIN")
     # bajajauto_constructed_data = get_constructed_data(symbol="BAJAJ-AUTO")
 
-    banknifty_ongoing_trades = (
-        NFO.query.filter_by(
-            exited_at=None,
-            symbol="BANKNIFTY",
-            strategy_id=strategy_id,
-            expiry=current_expiry,
-            broker_id=None,
-        ).all()
-        if strategy_id
-        else NFO.query.filter_by(
-            exited_at=None, symbol="BANKNIFTY", expiry=current_expiry, broker_id=None
-        ).all()
-    )
-    nifty_ongoing_trades = (
-        NFO.query.filter_by(
-            exited_at=None,
-            symbol="NIFTY",
-            strategy_id=strategy_id,
-            expiry=current_expiry,
-            broker_id=None,
-        ).all()
-        if strategy_id
-        else NFO.query.filter_by(
-            exited_at=None, symbol="NIFTY", expiry=current_expiry, broker_id=None
-        ).all()
-    )
+    banknifty_ongoing_trades = NFO.query.filter_by(
+        exited_at=None,
+        symbol="BANKNIFTY",
+        strategy_id=strategy_id,
+        expiry=current_expiry,
+        broker_id=None,
+    ).all()
+    nifty_ongoing_trades = NFO.query.filter_by(
+        exited_at=None,
+        symbol="NIFTY",
+        strategy_id=strategy_id,
+        expiry=current_expiry,
+        broker_id=None,
+    ).all()
     ongoing_trades = {
         "BANKNIFTY": banknifty_ongoing_trades,
         "NIFTY": nifty_ongoing_trades,
@@ -697,32 +685,20 @@ def close_all_trades(strategy_id=None):
             symbol="NIFTY", expiry=next_expiry
         )
 
-        banknifty_ongoing_trades = (
-            NFO.query.filter_by(
-                exited_at=None,
-                symbol="BANKNIFTY",
-                strategy_id=strategy_id,
-                expiry=next_expiry,
-                broker_id=None,
-            ).all()
-            if strategy_id
-            else NFO.query.filter_by(
-                exited_at=None, symbol="BANKNIFTY", expiry=next_expiry, broker_id=None
-            ).all()
-        )
-        nifty_ongoing_trades = (
-            NFO.query.filter_by(
-                exited_at=None,
-                symbol="NIFTY",
-                strategy_id=strategy_id,
-                expiry=next_expiry,
-                broker_id=None,
-            ).all()
-            if strategy_id
-            else NFO.query.filter_by(
-                exited_at=None, symbol="NIFTY", expiry=next_expiry, broker_id=None
-            ).all()
-        )
+        banknifty_ongoing_trades = NFO.query.filter_by(
+            exited_at=None,
+            symbol="BANKNIFTY",
+            strategy_id=strategy_id,
+            expiry=next_expiry,
+            broker_id=None,
+        ).all()
+        nifty_ongoing_trades = NFO.query.filter_by(
+            exited_at=None,
+            symbol="NIFTY",
+            strategy_id=strategy_id,
+            expiry=next_expiry,
+            broker_id=None,
+        ).all()
         ongoing_trades = {
             "BANKNIFTY": banknifty_ongoing_trades,
             "NIFTY": nifty_ongoing_trades,

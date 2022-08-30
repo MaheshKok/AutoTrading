@@ -17,6 +17,7 @@ from apis.utils import close_all_trades
 from apis.utils import get_computed_profit
 from apis.utils import get_constructed_data
 from extensions import db
+from models.nfo import NFO
 from models.option_chain import OptionChain
 
 log = logging.getLogger(__name__)
@@ -97,7 +98,10 @@ def register_base_routes(app):
 
     @app.route("/api/close_trades/all")
     def close_trades():
-        return close_all_trades()
+        for strategy_id_result in NFO.query.with_entities(NFO.strategy_id).distinct(NFO.strategy_id).all():
+            strategy_id = strategy_id_result[0]
+            close_all_trades(strategy_id)
+        return "all trades closed"
 
     @app.route("/api/thread")
     def test_threading():
