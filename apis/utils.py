@@ -92,7 +92,7 @@ def get_constructed_data(symbol="BANKNIFTY", expiry=None):
     options_data_lst = fetch_data(symbol, expiry)
 
     constructed_data = {}
-    # strikeprice cannot be float for banknifty so remove decimals
+    # strikeprice cannot be a float value for banknifty so remove decimals
     for option_data in options_data_lst:
         strike_price = option_data["stkPrc"][:-2]
         constructed_data.update(

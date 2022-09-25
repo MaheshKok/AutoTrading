@@ -1,4 +1,5 @@
 # Create data storage
+import uuid
 from datetime import datetime
 
 from sqlalchemy.dialects.postgresql import UUID
@@ -9,7 +10,7 @@ from extensions import db
 class NFO(db.Model):
     __tablename__ = "nfo"
 
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     nfo_type = db.Column(db.String, nullable=False)
 
     # order detail

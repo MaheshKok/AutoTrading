@@ -11,7 +11,7 @@ class NFOSchema(Schema):
         self_view_kwargs = {"id": "<id>"}
         self_view_many = "nfo_list"
 
-    id = fields.Integer(as_string=True, dump_only=True)
+    id = fields.UUID(dump_only=True)
     nfo_type = fields.String()
 
     # order detail
