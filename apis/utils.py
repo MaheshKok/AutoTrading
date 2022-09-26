@@ -522,6 +522,7 @@ def get_computed_profit(strategy_id=None):
             symbol="NIFTY", expiry=current_expiry_str
         )
 
+
         # axis_bank_constructed_data = get_constructed_data(symbol="AXISBANK")
         # sbi_constructed_data = get_constructed_data(symbol="SBIN")
         # bajajauto_constructed_data = get_constructed_data(symbol="BAJAJ-AUTO")
