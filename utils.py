@@ -74,24 +74,24 @@ def generate_csv():
 # pprint(strategy_id)
 
 
-def show_chart(strategy_id=100, file_name="db_data/till_28_apr.csv"):
+def show_chart(strategy_id=100, file_name="db_data/bit_io_full.csv"):
     date_profit_dict = {}
     with open(file_name, "r") as csvfile:
         lines = csv.reader(csvfile, delimiter=",")
         strategy_name = ""
         for row in lines:
             # strategy_id
-            if row[10] == str(strategy_id):
+            if row[12] == str(strategy_id):
                 with contextlib.suppress(Exception):
-                    exited_at_date_time = parser.parse(row[7])
+                    exited_at_date_time = parser.parse(row[9])
                     date_ = exited_at_date_time.date()
                     if date_ >= datetime.date(2022, 2, 3):
                         date_profit_dict[date_] = (
-                            date_profit_dict[date_] + int(eval(row[5]))
+                            date_profit_dict[date_] + int(eval(row[4]))
                             if date_ in date_profit_dict
                             else int(eval(row[5]))
                         )
-                        strategy_name = row[11]
+                        strategy_name = f"{row[12]} - {row[13]}"
     # date_profit_dict = {}
     # with open(
     #     "trading_view_chart_calls/testing_Mahesh_strategy_[RS]_V0_2022-02-25.csv", "r"
@@ -125,15 +125,15 @@ def show_chart(strategy_id=100, file_name="db_data/till_28_apr.csv"):
     for x, y in zip(x, y):
         label = round(y / 100000, 2)
 
-        plt.annotate(
-            label,  # this is the value which we want to label (text)
-            (x, y),  # x and y is the points location where we have to label
-            textcoords="offset points",
-            xytext=(0, 10),  # this for the distance between the points
-            # and the text label
-            ha="left",
-            arrowprops=dict(arrowstyle="->", color="green"),
-        )
+        # plt.annotate(
+        #     label,  # this is the value which we want to label (text)
+        #     (x, y),  # x and y is the points location where we have to label
+        #     textcoords="offset points",
+        #     xytext=(0, 10),  # this for the distance between the points
+        #     # and the text label
+        #     ha="left",
+        #     arrowprops=dict(arrowstyle="->", color="green"),
+        # )
 
     plt.xticks(rotation=25)
     plt.xlabel("date_time")
@@ -144,14 +144,14 @@ def show_chart(strategy_id=100, file_name="db_data/till_28_apr.csv"):
     plt.show()
 
 
-if __name__ != "__main__":
+if __name__ == "__main__":
     ## uncomment if you want to download db data to csv
     # with app.app_context():
     #     generate_csv()
 
     # for row in pd.read_csv('nfo_new.csv', nrows=1000):
     #     pass
-    strategy_ids = [3, 5, 7, 9, 11, 12, 26, 28, 40, 41, 98, 99, 100, 101]
+    strategy_ids = [3, 4, 5, 7, 9, 11, 13, 26, 40, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101]
     for strategy_id in strategy_ids:
         show_chart(strategy_id)
 
@@ -176,17 +176,17 @@ def add_column():
 # add_column()
 
 
-def delete_rows():
-    with app.app_context():
-        delete_q = NFO.__table__.delete().where(
-            NFO.exited_at != None
-        )
-        db.session.execute(delete_q)
-        db.session.commit()
-        print("rows deleted ")
-
-
-delete_rows()
+# def delete_rows():
+#     with app.app_context():
+#         delete_q = NFO.__table__.delete().where(
+#             NFO.exited_at != None
+#         )
+#         db.session.execute(delete_q)
+#         db.session.commit()
+#         print("rows deleted ")
+#
+#
+# # delete_rows()
 
 
 def undo_last_action():
