@@ -27,11 +27,11 @@ def get_alice_blue_obj():
                 access_token=broker.access_token,
                 master_contracts_to_download=["NFO"],
             )
-        except:
+        except Exception as e:
             broker = (
                 Broker.query.filter_by(name="alice_blue").with_for_update().scalar()
             )
-            access_token = AliceBlue.login_and_get_access_token(
+            access_token = AliceBlue.login_and_get_sessionID(
                 username=broker.username,
                 password=broker.password,
                 twoFA="1994",
