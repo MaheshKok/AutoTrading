@@ -23,28 +23,26 @@ def get_alice_blue_obj():
         try:
             alice = AliceBlue(
                 username=broker.username,
-                password=broker.password,
-                access_token=broker.access_token,
+                session_id=broker.access_token,
                 master_contracts_to_download=["NFO"],
             )
         except Exception as e:
             broker = (
                 Broker.query.filter_by(name="alice_blue").with_for_update().scalar()
             )
-            access_token = AliceBlue.login_and_get_sessionID(
+            session_id = AliceBlue.login_and_get_sessionID(
                 username=broker.username,
                 password=broker.password,
                 twoFA="1994",
                 api_secret=broker.api_secret,
                 app_id=broker.app_id,
             )
-            broker.access_token = access_token
+            broker.access_token = session_id
             db.session.commit()
 
             alice = AliceBlue(
                 username=broker.username,
-                password=broker.password,
-                access_token=access_token,
+                session_id=session_id,
                 master_contracts_to_download=["NFO"],
             )
 
@@ -165,24 +163,23 @@ def buy_alice_blue_trades(self, data, expiry: datetime.date, nfo_type):
         product_type=ProductType.Delivery,
         price=0.0,
         trigger_price=None,
-        stop_loss=None,
-        square_off=None,
-        trailing_sl=None,
-        is_amo=False,
+        stop_loss=None, target=None, trailing_sl=None,
+        disclosed_quantity=None,
+        order_tag=None
     )
 
-    order_id = place_order_response["data"]["oms_order_id"]
+    order_id = place_order_response['NOrdNo']
     for _ in range(1, 10):
-        order_status = alice.get_order_history(order_id)["data"][0]
-        if order_status["order_status"] == STATUS.COMPLETE:
-            data["entry_price"] = order_status["average_price"]
+        order_status = alice.get_order_history(order_id)
+        if order_status["Status"] == STATUS.COMPLETE:
+            data["entry_price"] = order_status["averageprice"]
             return self.create_object(data, kwargs={})
         time.sleep(1)
 
-    capture_exception(Exception(order_status["rejection_reason"], order_status))
+    capture_exception(Exception(order_status["rejectionreason"], order_status))
 
     telegram_bot.send_message(chat_id="1229129389", text=order_status)
-    log.warning(alice.get_order_history(order_id)["data"][0])
+    log.warning(alice.get_order_history(order_id))
 
 
 def get_order_status(alice, order_id):
