@@ -83,7 +83,7 @@ def close_alice_blue_trades(
     ongoing_trades,
     data,
     current_time,
-constructed_data
+    constructed_data,
 ):
     """
     assumptions
@@ -125,7 +125,11 @@ constructed_data
                     time.sleep(1)
 
     return close_ongoing_trades(
-        ongoing_trades, constructed_data, current_time, data, strike_optiontype_exitprice_dict
+        ongoing_trades,
+        constructed_data,
+        current_time,
+        data,
+        strike_optiontype_exitprice_dict,
     )
 
 
@@ -163,23 +167,39 @@ def buy_alice_blue_trades(self, data, expiry: datetime.date, nfo_type):
         product_type=ProductType.Delivery,
         price=0.0,
         trigger_price=None,
-        stop_loss=None, target=None, trailing_sl=None,
+        stop_loss=None,
+        target=None,
+        trailing_sl=None,
         disclosed_quantity=None,
-        order_tag=None
+        order_tag=None,
     )
 
-    order_id = place_order_response['NOrdNo']
-    for _ in range(1, 10):
-        order_status = alice.get_order_history(order_id)
-        if order_status["Status"] == STATUS.COMPLETE:
-            data["entry_price"] = order_status["averageprice"]
+    order_id = place_order_response[0]["NOrdNo"]
+    for _ in range(10):
+        order_history = alice.get_order_history(order_id)
+        latest_order_status = order_history[0]
+        if latest_order_status["Status"] == STATUS.COMPLETE:
+            data["entry_price"] = latest_order_status["averageprice"]
             return self.create_object(data, kwargs={})
-        time.sleep(1)
+        elif latest_order_status["Status"] == STATUS.REJECTED:
+            capture_exception(
+                Exception(latest_order_status["rejectionreason"], latest_order_status)
+            )
+            telegram_bot.send_message(
+                chat_id="1229129389",
+                text=f"Order rejected for {data['symbol']} {data['strike']} {data['quantity']}, reason: {latest_order_status['rejectionreason']}",
+            )
+            log.warning(f"order_history: {order_history}")
+            return None
+        else:
+            time.sleep(1)
 
-    capture_exception(Exception(order_status["rejectionreason"], order_status))
-
-    telegram_bot.send_message(chat_id="1229129389", text=order_status)
-    log.warning(alice.get_order_history(order_id))
+    telegram_bot.send_message(
+        chat_id="1229129389",
+        text=f"Order not completed for order_id: {order_id}, {data['symbol']}, {data['strike']}, {data['quantity']}",
+    )
+    log.warning(f"order_history: {latest_order_status}")
+    return None
 
 
 def get_order_status(alice, order_id):

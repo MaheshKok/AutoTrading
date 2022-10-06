@@ -37,6 +37,8 @@ class STATUS:
     SUCCESS = "success"
     ERROR = "error"
     COMPLETE = "complete"
+    REJECTED = "rejected"
+    VALIDATION_PENDING = "validation pending"
 
 
 def get_current_expiry():
