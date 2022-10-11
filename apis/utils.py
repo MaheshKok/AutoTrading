@@ -56,7 +56,6 @@ def get_profit(trade, ltp):
     else:
         b, a = trade.entry_price, ltp
 
-
     # TODO charges to be deducted should be dynamic because in future apart from Bank and Nifty we will have others F&O
     return (b - a) * trade.quantity - 30
 
