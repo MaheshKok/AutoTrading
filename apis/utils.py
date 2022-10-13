@@ -698,6 +698,7 @@ def close_all_trades(strategy_id):
             expiry=next_expiry,
             broker_id=None,
         ).all()
+
         nifty_ongoing_trades = NFO.query.filter_by(
             exited_at=None,
             symbol="NIFTY",
