@@ -9,10 +9,10 @@ def register_db(app):
         # app.config[
         #     "SQLALCHEMY_DATABASE_URI"
         # ] = "postgres+psycopg2://postgres:password@localhost:54322/paper_trading"
-        # app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
-        app.config[
-            "SQLALCHEMY_DATABASE_URI"
-        ] = "postgresql://maheshkokare100:v2_3titR_UxWyXXER94VqFkMUWpyxwyz@db.bit.io/maheshkokare100/current_db"
+        app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
+        # app.config[
+        #     "SQLALCHEMY_DATABASE_URI"
+        # ] = "postgresql://maheshkokare100:v2_3titR_UxWyXXER94VqFkMUWpyxwyz@db.bit.io/maheshkokare100/current_db"
         app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
         app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
             "pool_recycle": 3600,
