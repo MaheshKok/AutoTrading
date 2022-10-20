@@ -45,3 +45,4 @@ urllib3==1.26.5
 Werkzeug==2.0.1
 tzlocal==2.1
 Flask-APScheduler==1.12.3
+gunicorn
